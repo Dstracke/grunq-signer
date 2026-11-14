@@ -106,6 +106,11 @@ Adapter-Layer `bg-runtime` (API-Unterschiede: SW-Lifecycle siehe §5.2,
   geschnitten, Default bleibt „immer nachfragen".
 - Auto-Lock: nach `idle_minutes` (Standard 30, konfigurierbar) verlangt
   die Extension eine lokale Entsperrung (siehe §7), bevor signiert wird.
+- **Sprache:** Popup, Bestätigungsdialoge und Fehler folgen den
+  Browsereinstellungen über die WebExtension-i18n-Mechanik (`_locales/`
+  mit Deutsch + Englisch; Manifest-Texte via `__MSG_…__`,
+  `default_locale: en`). Code-Kommentare und README sind englisch
+  (Konvention: Englisch nach innen).
 
 ## 5. NIP-46-Signer-Schicht
 
