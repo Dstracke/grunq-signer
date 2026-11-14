@@ -218,6 +218,15 @@ textarea:focus {
   color: var(--danger);
 }
 
+#invite-box {
+  margin-top: 10px;
+}
+
+#invite-box .hint {
+  margin: 6px 0 0;
+  font-size: 11px;
+}
+
 .hint {
   color: var(--muted);
   font-size: 12px;

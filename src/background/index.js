@@ -1,7 +1,7 @@
 // Background (event page / service worker): the only place that touches keys.
 // Handles NIP-07 RPCs from content scripts, origin permissions, approval
-// dialogs and identity storage. NIP-46 relay sessions come in M2.
-// UI/error language follows the browser settings via the i18n API.
+// dialogs, identity storage AND the NIP-46 remote signer (bunker) sessions
+// over relays. UI/error language follows the browser settings via i18n.
 import {
   derivePubkeyHex,
   encodeNpub,
@@ -15,6 +15,8 @@ import {
   nip44Decrypt,
   nip44Encrypt,
 } from '../lib/signing.js';
+import { RelayPool } from '../lib/relay-pool.js';
+import { createSignerCore, SETTINGS_STORE, SESSIONS_STORE } from '../signer/core.js';
 
 const api = globalThis.browser ?? globalThis.chrome;
 
@@ -27,6 +29,8 @@ const STORE = {
   KEY: 'grunq_signer:key', // { privHex, created }
   IDENTITY: 'grunq_signer:identity', // { pubkey, created }
   PERMISSIONS: 'grunq_signer:permissions', // { [origin]: { nip07: true, ts } }
+  SESSIONS: SESSIONS_STORE, // [ { secret, relays, clientPub, ... } ]
+  SETTINGS: SETTINGS_STORE, // { relays: [...], idleMinutes }
 };
 
 function err(code) {
@@ -120,6 +124,55 @@ async function requireOriginPermission(origin) {
   throw err('denied');
 }
 
+// ---------- NIP-46 signer (bunker) ----------
+
+const signerCore = createSignerCore({
+  storage: {
+    get: (key) => getStore(key),
+    set: (key, value) => setStore(key, value),
+  },
+  transport: new RelayPool(),
+  requestApproval,
+  signerPrivHex: async () => (await getStore(STORE.KEY))?.privHex,
+  log: (...args) => console.log('[nip46]', ...args),
+});
+
+let signerBooted = false;
+
+async function bootSigner() {
+  if (signerBooted) return;
+  if (!(await hasIdentity())) return;
+  signerBooted = true;
+  await signerCore.start().catch((e) => {
+    console.log('[nip46] start failed', e);
+    signerBooted = false;
+  });
+}
+
+// Event pages start fresh on browser start and (re)install; the top-level
+// call covers every other wake-up. Reconnect-on-wake is the whole strategy:
+// on start we reload the session registry and re-subscribe (since = now-5min
+// catches requests that arrived while the page was asleep).
+api.runtime.onStartup?.addListener?.(() => bootSigner());
+api.runtime.onInstalled?.addListener?.(() => bootSigner());
+bootSigner();
+
+// Keepalive alarm: wakes the event page so sessions get reconnected and
+// expired pairing invitations get pruned. One minute is the smallest period
+// both Firefox and Chromium accept reliably.
+const KEEPALIVE_ALARM = 'grunq-signer-keepalive';
+try {
+  api.alarms?.create?.(KEEPALIVE_ALARM, { periodInMinutes: 1 });
+  api.alarms?.onAlarm?.addListener?.((alarm) => {
+    if (alarm?.name === KEEPALIVE_ALARM && signerBooted) {
+      signerCore.tick().catch((e) => console.log('[nip46] tick failed', e));
+      bootSigner();
+    }
+  });
+} catch {
+  /* alarms unavailable (tests) - reconnect-on-wake still covers us */
+}
+
 // ---------- NIP-07 RPC handling ----------
 
 function senderOrigin(sender) {
@@ -150,8 +203,9 @@ async function handleRpc(msg, sender) {
     }
 
     case 'getRelays': {
-      // M2: bunker sessions provide relays. NIP-07 callers treat {} as "none".
-      return {};
+      // NIP-07 callers treat {} as "none"; with NIP-46 relays configured we
+      // report the allowlist as read+write per the NIP-07 shape.
+      return signerCore.relaysMap();
     }
 
     case 'signEvent': {
@@ -210,6 +264,10 @@ async function handlePopup(msg) {
     case 'state': {
       const key = await getStore(STORE.KEY);
       const perms = (await getStore(STORE.PERMISSIONS)) ?? {};
+      const [sessions, relays] = await Promise.all([
+        key ? signerCore.listSessions().catch(() => []) : Promise.resolve([]),
+        signerCore.getRelaySettings().catch(() => ({ relays: [] })),
+      ]);
       return {
         hasKey: !!key,
         identity: key
@@ -222,6 +280,8 @@ async function handlePopup(msg) {
         approvals: Object.entries(perms)
           .filter(([, v]) => v?.nip07)
           .map(([origin, v]) => ({ origin, ts: v.ts })),
+        sessions,
+        relays: relays.relays,
       };
     }
 
@@ -232,6 +292,7 @@ async function handlePopup(msg) {
         pubkey: derivePubkeyHex(privHex),
         created: Date.now(),
       });
+      await bootSigner();
       return { ok: true };
     }
 
@@ -239,12 +300,17 @@ async function handlePopup(msg) {
       const id = randomIdentity();
       await setStore(STORE.KEY, { privHex: id.privHex, created: Date.now() });
       await setStore(STORE.IDENTITY, { pubkey: id.pubkeyHex, created: Date.now() });
+      await bootSigner();
       return { ok: true };
     }
 
     case 'remove': {
       await removeStore(STORE.KEY);
       await removeStore(STORE.IDENTITY);
+      if (signerBooted) {
+        signerBooted = false;
+        await signerCore.stop();
+      }
       return { ok: true };
     }
 
@@ -253,6 +319,31 @@ async function handlePopup(msg) {
       delete perms[String(msg.origin ?? '')];
       await setStore(STORE.PERMISSIONS, perms);
       return { ok: true };
+    }
+
+    // ---------- NIP-46 (bunker) ----------
+
+    case 'nip46.invite': {
+      await bootSigner();
+      return await signerCore.createInvite();
+    }
+
+    case 'nip46.sessions': {
+      return await signerCore.listSessions();
+    }
+
+    case 'nip46.revoke': {
+      await signerCore.revoke(String(msg.id ?? ''));
+      return { ok: true };
+    }
+
+    case 'nip46.relays.get': {
+      return await signerCore.getRelaySettings();
+    }
+
+    case 'nip46.relays.set': {
+      const list = Array.isArray(msg.relays) ? msg.relays : [];
+      return await signerCore.setRelaySettings(list);
     }
 
     default:
@@ -267,7 +358,13 @@ async function handleApprovalPage(msg) {
     case 'info': {
       const p = pendingApprovals.get(String(msg.requestId ?? ''));
       if (!p) return null;
-      return { kind: p.req.kind, origin: p.req.origin, event: p.req.event ?? null };
+      return {
+        kind: p.req.kind,
+        origin: p.req.origin,
+        event: p.req.event ?? null,
+        clientName: p.req.clientName ?? '',
+        clientPub: p.req.clientPub ?? null,
+      };
     }
     case 'decide': {
       const done = finishApproval(String(msg.requestId ?? ''), msg.decision);

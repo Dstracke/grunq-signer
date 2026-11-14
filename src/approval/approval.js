@@ -18,10 +18,10 @@ function initI18n() {
   }
 }
 
-function eventPreview(ev, origin) {
+function eventPreview(ev, origin, metaKey = 'eventMeta') {
   const head = document.createElement('div');
   head.className = 'event-meta';
-  head.textContent = t('eventMeta', [
+  head.textContent = t(metaKey, [
     origin,
     String(ev.kind ?? '?'),
     new Date((ev.created_at ?? 0) * 1000).toLocaleString(undefined, {
@@ -49,6 +49,7 @@ async function init() {
   document.getElementById('title').textContent =
     info.kind === 'nip07-access' ? t('titleAccess')
     : info.kind === 'sign-event' ? t('titleSign')
+    : info.kind === 'nip46-sign' ? t('titleNip46Sign')
     : t('titleLoading');
   content.textContent = '';
 
@@ -60,10 +61,22 @@ async function init() {
     content.append(...eventPreview(info.event ?? {}, info.origin));
     document.getElementById('btn-allow').textContent = t('btnSign');
     document.getElementById('btn-always').hidden = true;
+  } else if (info.kind === 'nip46-sign') {
+    const clientLabel = info.clientName || shortPub(info.clientPub);
+    content.textContent = t('nip46SignIntro', [clientLabel]) + '\n\n';
+    content.append(...eventPreview(info.event ?? {}, clientLabel, 'eventMetaNip46'));
+    document.getElementById('btn-allow').textContent = t('btnSign');
+    document.getElementById('btn-always').hidden = true;
   } else {
     content.textContent = JSON.stringify(info, null, 2);
   }
   document.getElementById('actions').hidden = false;
+}
+
+function shortPub(pub) {
+  return typeof pub === 'string' && pub.length >= 16
+    ? pub.slice(0, 8) + '…' + pub.slice(-8)
+    : String(pub ?? '?');
 }
 
 function decide(decision) {

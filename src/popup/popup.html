@@ -39,6 +39,34 @@
       <p id="no-approvals" class="muted" data-i18n="noApprovals"></p>
     </section>
 
+    <section class="card">
+      <h2 data-i18n="bunkerHeading"></h2>
+      <p class="hint" data-i18n="bunkerHint"></p>
+      <div class="row">
+        <button id="btn-invite" class="primary" data-i18n="btnInvite"></button>
+      </div>
+      <p id="invite-error" class="error" hidden></p>
+      <div id="invite-box" hidden>
+        <textarea id="invite-uri" class="mono" rows="3" readonly spellcheck="false"></textarea>
+        <div class="row">
+          <button id="btn-invite-copy" data-i18n="btnCopyUri"></button>
+        </div>
+        <p class="hint" data-i18n="inviteExpires"></p>
+      </div>
+      <ul id="sessions" class="approvals"></ul>
+      <p id="no-sessions" class="muted" data-i18n="noSessions"></p>
+    </section>
+
+    <section class="card">
+      <h2 data-i18n="relaysHeading"></h2>
+      <p class="hint" data-i18n="relaysHint"></p>
+      <textarea id="relays-input" class="mono" rows="3" spellcheck="false"></textarea>
+      <div class="row">
+        <button id="btn-relays-save" data-i18n="btnRelaysSave"></button>
+      </div>
+      <p id="relays-status" class="hint" hidden></p>
+    </section>
+
     <p class="hint" data-i18n="popupHint"></p>
   </main>
 

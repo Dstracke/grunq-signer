@@ -14,6 +14,19 @@
   "noApprovals": { "message": "Noch keine Freigaben." },
   "btnRevoke": { "message": "Entfernen" },
   "popupHint": { "message": "Websites mit Freigabe erhalten window.nostr (NIP-07). Jede Signatur bestätigst du im Extra-Fenster." },
+  "bunkerHeading": { "message": "Bunker-Verbindungen" },
+  "bunkerHint": { "message": "Andere Geräte oder Programme dürfen diese Identität über Nostr-Relays nutzen (NIP-46) – dein Schlüssel bleibt dabei in der Extension. Füge die Einladungs-URI im verbindenden Programm ein, z. B. im Grunq-Dashboard unter „Identität verbinden“." },
+  "btnInvite": { "message": "Einladung erzeugen" },
+  "btnCopyUri": { "message": "URI kopieren" },
+  "inviteExpires": { "message": "Die Einladung bleibt gültig, bis sie gekoppelt oder entfernt wird. Verbindungen kannst du hier jederzeit aufheben." },
+  "noSessions": { "message": "Noch keine Verbindungen." },
+  "sessionWaiting": { "message": "wartet auf Verbindung …" },
+  "relaysHeading": { "message": "Relays" },
+  "relaysHint": { "message": "Ein Relay pro Zeile (wss://…). Genutzt für Bunker-Einladungen und NIP-07-Meldungen an Apps. Das Grunq-Bootstrap-Relay ist Default; alles läuft auch mit eigenen Relays." },
+  "btnRelaysSave": { "message": "Relays speichern" },
+  "relaysSaved": { "message": "Relays gespeichert." },
+  "nip46ErrorSessionLimit": { "message": "Verbindungslimit erreicht (16). Bitte zuerst eine alte Verbindung entfernen." },
+  "nip46ErrorNoRelays": { "message": "Keine Relays konfiguriert – oben mindestens ein Relay eintragen." },
   "errorNoKey": { "message": "Keine Identität eingerichtet – bitte zuerst die Extension öffnen und einen Schlüssel hinterlegen." },
   "errorDenied": { "message": "Die Website hat keinen Zugriff erhalten." },
   "errorInvalidInput": { "message": "Ungültige Anfrage." },
@@ -46,9 +59,23 @@
       "tags": { "content": "$4" }
     }
   },
+  "eventMetaNip46": {
+    "message": "Client: $ORIGIN$\nArt (kind): $KIND$\nZeit: $TIME$\nTags: $TAGS$",
+    "placeholders": {
+      "origin": { "content": "$1" },
+      "kind": { "content": "$2" },
+      "time": { "content": "$3" },
+      "tags": { "content": "$4" }
+    }
+  },
   "btnAllow": { "message": "Zulassen" },
   "btnAlways": { "message": "Immer zulassen" },
   "btnDeny": { "message": "Ablehnen" },
   "btnSign": { "message": "Signieren" },
-  "decisionSaved": { "message": "Entscheidung gespeichert – dieses Fenster kann geschlossen werden." }
+  "decisionSaved": { "message": "Entscheidung gespeichert – dieses Fenster kann geschlossen werden." },
+  "titleNip46Sign": { "message": "Event für ein verbundenes Programm signieren?" },
+  "nip46SignIntro": {
+    "message": "Das verbundene Programm $CLIENT$ möchte folgendes Event mit deiner Identität signieren:",
+    "placeholders": { "client": { "content": "$1" } }
+  }
 }

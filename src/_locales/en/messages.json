@@ -14,6 +14,19 @@
   "noApprovals": { "message": "No approvals yet." },
   "btnRevoke": { "message": "Remove" },
   "popupHint": { "message": "Approved sites get window.nostr (NIP-07). You confirm every signature in a separate window." },
+  "bunkerHeading": { "message": "Bunker connections" },
+  "bunkerHint": { "message": "Let other devices or programs use this identity over Nostr relays (NIP-46) — they never see your key. Paste the invitation URI into the connecting program, e.g. the Grunq dashboard's \"Connect identity\"." },
+  "btnInvite": { "message": "Create invitation" },
+  "btnCopyUri": { "message": "Copy URI" },
+  "inviteExpires": { "message": "The invitation is valid until it is paired or removed. Connections can be removed here at any time." },
+  "noSessions": { "message": "No connections yet." },
+  "sessionWaiting": { "message": "waiting for connection…" },
+  "relaysHeading": { "message": "Relays" },
+  "relaysHint": { "message": "One relay per line (wss://…). Used for bunker invitations and reported to NIP-07 apps. The Grunq bootstrap relay is the default; everything works with your own relays too." },
+  "btnRelaysSave": { "message": "Save relays" },
+  "relaysSaved": { "message": "Relays saved." },
+  "nip46ErrorSessionLimit": { "message": "Connection limit reached (16). Remove an old connection first." },
+  "nip46ErrorNoRelays": { "message": "No relays configured — add at least one relay above." },
   "errorNoKey": { "message": "No identity set up yet — open the extension first and add a key." },
   "errorDenied": { "message": "The website was not granted access." },
   "errorInvalidInput": { "message": "Invalid request." },
@@ -46,9 +59,23 @@
       "tags": { "content": "$4" }
     }
   },
+  "eventMetaNip46": {
+    "message": "Client: $ORIGIN$\nKind: $KIND$\nTime: $TIME$\nTags: $TAGS$",
+    "placeholders": {
+      "origin": { "content": "$1" },
+      "kind": { "content": "$2" },
+      "time": { "content": "$3" },
+      "tags": { "content": "$4" }
+    }
+  },
   "btnAllow": { "message": "Allow" },
   "btnAlways": { "message": "Always allow" },
   "btnDeny": { "message": "Deny" },
   "btnSign": { "message": "Sign" },
-  "decisionSaved": { "message": "Decision saved — this window can be closed." }
+  "decisionSaved": { "message": "Decision saved — this window can be closed." },
+  "titleNip46Sign": { "message": "Sign event for a connected program?" },
+  "nip46SignIntro": {
+    "message": "The connected program $CLIENT$ wants to sign an event with your identity:",
+    "placeholders": { "client": { "content": "$1" } }
+  }
 }

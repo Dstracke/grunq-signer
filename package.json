@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
-    "test": "node test/crypto.test.mjs"
+    "test": "node --test test/crypto.test.mjs test/nip46.test.mjs"
   },
   "dependencies": {
     "@noble/ciphers": "^2.0.1",
