@@ -12,7 +12,7 @@ import {
   buildBunkerUri,
   DEFAULT_RELAYS,
 } from '../src/signer/core.js';
-import { randomIdentity, derivePubkeyHex, verifyEvent } from '../src/lib/keys.js';
+import { randomIdentity, derivePubkeyHex, verifyEvent, encodeNpub } from '../src/lib/keys.js';
 import { nip44Decrypt, nip44Encrypt } from '../src/lib/signing.js';
 import { MiniClient } from './mini-client.mjs';
 import { RelayPool } from '../src/lib/relay-pool.js';
@@ -270,6 +270,181 @@ test('core: reconnect re-binds the same secret to a new client key', async () =>
   assert.equal(sessions[0].clientPub, second.pub);
   const pong = await requestViaCore(env, core, second, 'ping', []);
   assert.equal(pong.result, 'pong');
+});
+
+test('core: nostrconnect pairing answers with the Grunq handshake response', async () => {
+  const env = fakeEnv();
+  const approvals = [];
+  env.requestApproval = async (info) => {
+    approvals.push(info);
+    return 'allow';
+  };
+  const core = createSignerCore(env);
+  await core.start();
+  const client = makeClient();
+  const secret = bytesToHex(randomBytes(16));
+  const uri = `nostrconnect://${client.pub}?relay=wss%3A%2F%2Frelay.example&secret=${secret}&name=Grunq%20Dashboard&perms=sign_event%2Cget_public_key`;
+
+  const info = await core.connectNostrConnect(uri, { origin: 'http://localhost:8080' });
+  assert.equal(info.npub, encodeNpub(client.pub));
+  assert.equal(info.clientName, 'Grunq Dashboard');
+  assert.deepEqual(info.relays, ['wss://relay.example']);
+
+  // approval dialog saw the page origin, client and relays
+  assert.equal(approvals.length, 1);
+  assert.equal(approvals[0].kind, 'nip46-nostrconnect');
+  assert.equal(approvals[0].clientPub, client.pub);
+  assert.equal(approvals[0].origin, 'http://localhost:8080');
+
+  // the first message to the client is a response whose result == secret
+  // (Grunq node semantics, bridge.go handleResponse)
+  assert.equal(env.transport.publishes.length, 1);
+  const pub = env.transport.publishes[0];
+  assert.equal(pub.event.pubkey, env.pub);
+  assert.ok(pub.event.tags.some((t) => t[0] === 'p' && t[1] === client.pub));
+  const plain = JSON.parse(nip44Decrypt(client.priv, env.pub, pub.event.content));
+  assert.equal(plain.result, secret);
+  assert.equal(plain.error, '');
+  assert.ok(plain.id);
+
+  // the session is live afterwards: node-style follow-up requests work
+  const pk = await requestViaCore(env, core, client, 'get_public_key', []);
+  assert.equal(pk.result, env.pub);
+  const sessions = await core.listSessions();
+  assert.equal(sessions.length, 1);
+  assert.equal(sessions[0].bound, true);
+  assert.equal(sessions[0].clientPub, client.pub);
+  assert.equal(sessions[0].clientName, 'Grunq Dashboard');
+  assert.equal(sessions[0].perms, 'sign_event,get_public_key');
+});
+
+test('core: denied nostrconnect pairing publishes nothing', async () => {
+  const env = fakeEnv({ requestApproval: async () => 'deny' });
+  const core = createSignerCore(env);
+  await core.start();
+  const client = makeClient();
+  const uri = `nostrconnect://${client.pub}?relay=wss://relay.example&secret=abc123`;
+  await assert.rejects(() => core.connectNostrConnect(uri, { origin: 'http://x' }), /connection denied|unauthorized/);
+  assert.equal(env.transport.publishes.length, 0);
+  assert.equal((await core.listSessions()).length, 0);
+});
+
+test('core: malformed nostrconnect URIs are rejected', async () => {
+  const env = fakeEnv();
+  const core = createSignerCore(env);
+  await core.start();
+  for (const uri of [
+    'bunker://abc?relay=wss://r',
+    'nostrconnect://nothex?relay=wss://r&secret=s',
+    'nostrconnect://' + 'a'.repeat(64) + '?secret=s', // no relay
+    'nostrconnect://' + 'a'.repeat(64) + '?relay=wss://r', // no secret
+  ]) {
+    await assert.rejects(() => core.connectNostrConnect(uri, {}), Error);
+  }
+  assert.equal(env.transport.publishes.length, 0);
+});
+
+test('core: secretless connect asks for approval and binds a session', async () => {
+  const env = fakeEnv();
+  const approvals = [];
+  env.requestApproval = async (info) => {
+    approvals.push(info);
+    return 'allow';
+  };
+  env.store.set(SETTINGS_STORE, { relays: ['wss://relay.example'], idleMinutes: 30 });
+  const core = createSignerCore(env);
+  await core.start();
+  const client = makeClient();
+
+  // Grunq node after restart: bunker URI without secret, fresh ephemeral key
+  const ack = await requestViaCore(env, core, client, 'connect', [
+    env.pub,
+    '',
+    'sign_event,get_public_key,switch_relays',
+    JSON.stringify({ name: 'Grunq' }),
+  ]);
+  assert.equal(ack.result, 'ack');
+  assert.equal(approvals.length, 1);
+  assert.equal(approvals[0].kind, 'nip46-connect');
+  assert.equal(approvals[0].clientPub, client.pub);
+
+  const pong = await requestViaCore(env, core, client, 'ping', []);
+  assert.equal(pong.result, 'pong');
+  const sessions = await core.listSessions();
+  assert.equal(sessions.length, 1);
+  assert.equal(sessions[0].bound, true);
+  assert.equal(sessions[0].clientPub, client.pub);
+  assert.equal(sessions[0].clientName, 'Grunq');
+});
+
+test('core: denied secretless connect answers error', async () => {
+  const env = fakeEnv({ requestApproval: async () => 'deny' });
+  env.store.set(SETTINGS_STORE, { relays: ['wss://relay.example'], idleMinutes: 30 });
+  const core = createSignerCore(env);
+  await core.start();
+  const client = makeClient();
+  const resp = await requestViaCore(env, core, client, 'connect', [env.pub, '', '', '']);
+  assert.equal(resp.error, 'error:unauthorized');
+  assert.equal((await core.listSessions()).length, 0);
+});
+
+test('core: repeated secretless connects reuse one provisional slot', async () => {
+  const env = fakeEnv();
+  const approvals = [];
+  env.requestApproval = async (info) => {
+    approvals.push(info);
+    return 'allow';
+  };
+  env.store.set(SETTINGS_STORE, { relays: ['wss://relay.example'], idleMinutes: 30 });
+  const core = createSignerCore(env);
+  await core.start();
+  const first = makeClient();
+  await requestViaCore(env, core, first, 'connect', [env.pub, '', '', '']);
+  const second = makeClient(); // node restarted: new ephemeral key
+  const ack = await requestViaCore(env, core, second, 'connect', [env.pub, '', '', '']);
+  assert.equal(ack.result, 'ack');
+  const sessions = await core.listSessions();
+  assert.equal(sessions.length, 1);
+  assert.equal(sessions[0].clientPub, second.pub);
+  // each new client key got its own approval (also on slot reuse)
+  assert.equal(approvals.filter((a) => a.kind === 'nip46-connect').length, 2);
+  const pong = await requestViaCore(env, core, second, 'ping', []);
+  assert.equal(pong.result, 'pong');
+});
+
+test('core: nip44_decrypt requires its own approval', async () => {
+  const env = fakeEnv();
+  const approvals = [];
+  env.requestApproval = async (info) => {
+    approvals.push(info);
+    return 'allow';
+  };
+  const core = createSignerCore(env);
+  await core.start();
+  const invite = await core.createInvite();
+  const client = makeClient();
+  await requestViaCore(env, core, client, 'connect', [env.pub, invite.secret, '', '']);
+
+  const inner = nip44Encrypt(client.priv, env.pub, 'to decrypt');
+  const dec = await requestViaCore(env, core, client, 'nip44_decrypt', [client.pub, inner]);
+  assert.equal(dec.result, 'to decrypt');
+  const decryptApproval = approvals.find((a) => a.kind === 'nip46-decrypt');
+  assert.ok(decryptApproval, 'decrypt approval requested');
+  assert.equal(decryptApproval.scheme, 'NIP-44');
+  assert.equal(decryptApproval.clientPub, client.pub);
+});
+
+test('core: denied nip44_decrypt returns error without leaking plaintext', async () => {
+  const env = fakeEnv({ requestApproval: async () => 'deny' });
+  const core = createSignerCore(env);
+  await core.start();
+  const invite = await core.createInvite();
+  const client = makeClient();
+  await requestViaCore(env, core, client, 'connect', [env.pub, invite.secret, '', '']);
+  const inner = nip44Encrypt(client.priv, env.pub, 'secret text');
+  const resp = await requestViaCore(env, core, client, 'nip44_decrypt', [client.pub, inner]);
+  assert.equal(resp.error, 'error:unauthorized');
+  assert.equal(resp.result, '');
 });
 
 // ---------- E2E against a real relay ----------

@@ -50,8 +50,14 @@ async function init() {
     info.kind === 'nip07-access' ? t('titleAccess')
     : info.kind === 'sign-event' ? t('titleSign')
     : info.kind === 'nip46-sign' ? t('titleNip46Sign')
+    : info.kind === 'nip46-nostrconnect' ? t('titleNip46NostrConnect')
+    : info.kind === 'nip46-connect' ? t('titleNip46Connect')
+    : info.kind === 'nip46-decrypt' ? t('titleNip46Decrypt')
     : t('titleLoading');
   content.textContent = '';
+
+  const hideAlways = () => { document.getElementById('btn-always').hidden = true; };
+  const clientLabel = (info) => info.clientName || shortPub(info.clientPub);
 
   if (info.kind === 'nip07-access') {
     content.textContent = t('accessIntro', [info.origin]);
@@ -60,15 +66,38 @@ async function init() {
     content.textContent = t('signIntro', [info.origin]) + '\n\n';
     content.append(...eventPreview(info.event ?? {}, info.origin));
     document.getElementById('btn-allow').textContent = t('btnSign');
-    document.getElementById('btn-always').hidden = true;
+    hideAlways();
   } else if (info.kind === 'nip46-sign') {
-    const clientLabel = info.clientName || shortPub(info.clientPub);
-    content.textContent = t('nip46SignIntro', [clientLabel]) + '\n\n';
-    content.append(...eventPreview(info.event ?? {}, clientLabel, 'eventMetaNip46'));
+    content.textContent = t('nip46SignIntro', [clientLabel(info)]) + '\n\n';
+    content.append(...eventPreview(info.event ?? {}, clientLabel(info), 'eventMetaNip46'));
     document.getElementById('btn-allow').textContent = t('btnSign');
-    document.getElementById('btn-always').hidden = true;
+    hideAlways();
+  } else if (info.kind === 'nip46-nostrconnect') {
+    content.textContent = t('nip46NostrConnectIntro', [
+      clientLabel(info),
+      info.clientNpub || shortPub(info.clientPub),
+      info.origin || '?',
+      (info.relays ?? []).join(' ') || '–',
+    ]);
+    hideAlways();
+  } else if (info.kind === 'nip46-connect') {
+    content.textContent = t('nip46ConnectIntro', [
+      clientLabel(info),
+      info.clientNpub || shortPub(info.clientPub),
+    ]);
+    hideAlways();
+  } else if (info.kind === 'nip46-decrypt') {
+    const payload = String(info.payload ?? '');
+    content.textContent = t('nip46DecryptIntro', [
+      clientLabel(info),
+      info.scheme || '?',
+      shortPub(info.peer),
+      payload.length > 120 ? payload.slice(0, 120) + ' …' : payload,
+    ]);
+    hideAlways();
   } else {
     content.textContent = JSON.stringify(info, null, 2);
+    hideAlways();
   }
   document.getElementById('actions').hidden = false;
 }

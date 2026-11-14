@@ -186,22 +186,83 @@ export function createSignerCore(env) {
     switch (method) {
       case 'connect': {
         // params: [remotePub(optional), secret, perms(optional), metadata(optional)]
-        const [, secret, perms, metadata] = params;
-        if (typeof secret !== 'string' || !secret) throw err('unauthorized', 'missing secret');
-        const token = sessions.find((s) => s.secret === secret);
-        if (!token) throw err('unauthorized', 'unknown secret');
-        if (typeof params[0] === 'string' && params[0]) {
-          const wanted = decodeSignerParam(params[0]);
+        const [remoteParam, secret, perms, metadata] = params;
+        if (typeof remoteParam === 'string' && remoteParam) {
+          const wanted = decodeSignerParam(remoteParam);
           const mine = await signerPub();
           if (wanted && wanted !== mine) throw err('unauthorized', 'wrong signer key');
         }
-        // Rebind: bunker clients regenerate ephemeral keys on reconnect.
+        if (typeof secret === 'string' && secret) {
+          const token = sessions.find((s) => s.secret === secret);
+          if (!token) throw err('unauthorized', 'unknown secret');
+          // Rebind: bunker clients regenerate ephemeral keys on reconnect.
+          token.clientPub = clientPub;
+          token.bound = true;
+          token.perms = typeof perms === 'string' ? perms : '';
+          token.clientName = parseClientName(metadata);
+          token.lastActive = now();
+          await saveSessions();
+          return 'ack';
+        }
+        // Secretless connect: the Grunq node stores bunker:// URIs WITHOUT
+        // the nostrconnect secret (that value verifies the client during
+        // pairing, it is not a signer token), so after a node restart it
+        // reconnects with a fresh ephemeral key and an empty secret. Relays
+        // are public, so "knows the npub" is no authentication - gate a new
+        // client behind a user approval instead of accepting silently.
+        let token = sessionForClient(sessions, clientPub);
+        if (!token) {
+          if (settings.relays.length === 0) throw err('no_relays');
+          // Every new client key needs an explicit approval - including the
+          // slot-reuse path below, so a stranger cannot silently take over
+          // the provisional slot of a restarted client.
+          const decision = await requestApproval({
+            kind: 'nip46-connect',
+            clientName: parseClientName(metadata),
+            clientPub,
+          });
+          if (decision !== 'allow') throw err('unauthorized', 'connection denied');
+          if (sessions.filter((s) => s.bound).length >= MAX_SESSIONS) {
+            // Slot reuse frees one, so re-check with the provisional
+            // candidate excluded.
+            const provisional = sessions
+              .filter((s) => s.provisional)
+              .sort((a, b) => (a.lastActive ?? a.created) - (b.lastActive ?? b.created))[0];
+            if (!provisional) throw err('session_limit');
+            token = provisional;
+          } else {
+            const provisional = sessions
+              .filter((s) => s.provisional)
+              .sort((a, b) => (a.lastActive ?? a.created) - (b.lastActive ?? b.created))[0];
+            if (provisional) {
+              // Reuse the slot of an older secretless session: every node
+              // restart mints a new ephemeral client key, so without slot
+              // reuse the registry would fill up with dead entries.
+              token = provisional;
+            } else {
+              token = {
+                secret: randomHex(16),
+                relays: [...settings.relays],
+                clientPub: null,
+                clientName: '',
+                perms: '',
+                created: now(),
+                lastActive: null,
+                bound: false,
+                provisional: true,
+              };
+              sessions.push(token);
+            }
+          }
+        }
         token.clientPub = clientPub;
         token.bound = true;
         token.perms = typeof perms === 'string' ? perms : '';
         token.clientName = parseClientName(metadata);
         token.lastActive = now();
+        sessionsCache = sessions;
         await saveSessions();
+        await refreshSubscriptions();
         return 'ack';
       }
 
@@ -274,9 +335,20 @@ export function createSignerCore(env) {
       case 'nip44_decrypt': {
         const s = requireSession(sessions, clientPub);
         touch(s);
-        await saveSessions();
         const [peer, payload] = params;
         if (typeof peer !== 'string' || typeof payload !== 'string') throw err('invalid_request');
+        // Decrypts leak plaintext to the requesting client, so every request
+        // is user-approved (protects against stolen-ciphertext harvesting).
+        const decision = await requestApproval({
+          kind: 'nip46-decrypt',
+          clientName: s.clientName || '',
+          clientPub: s.clientPub,
+          scheme: 'NIP-44',
+          peer,
+          payload,
+        });
+        if (decision !== 'allow') throw err('unauthorized', 'decryption denied');
+        await saveSessions();
         return nip44Decrypt(priv, peer, payload);
       }
 
@@ -292,9 +364,18 @@ export function createSignerCore(env) {
       case 'nip04_decrypt': {
         const s = requireSession(sessions, clientPub);
         touch(s);
-        await saveSessions();
         const [peer, payload] = params;
         if (typeof peer !== 'string' || typeof payload !== 'string') throw err('invalid_request');
+        const decision = await requestApproval({
+          kind: 'nip46-decrypt',
+          clientName: s.clientName || '',
+          clientPub: s.clientPub,
+          scheme: 'NIP-04',
+          peer,
+          payload,
+        });
+        if (decision !== 'allow') throw err('unauthorized', 'decryption denied');
+        await saveSessions();
         return nip04Decrypt(priv, peer, payload);
       }
 
@@ -329,6 +410,28 @@ export function createSignerCore(env) {
     } catch {
       return '';
     }
+  }
+
+  // nostrconnect://<clientPub-hex|npub>?relay=…&secret=…&name=…&perms=…
+  // (NIP-46 pairing initiated by the client; the Grunq node generates these
+  // for dashboard/viewer pairing.)
+  function parseNostrConnectUri(raw) {
+    let u;
+    try {
+      u = new URL(String(raw ?? ''));
+    } catch {
+      throw err('invalid_request', 'invalid nostrconnect URI');
+    }
+    if (u.protocol !== 'nostrconnect:') throw err('invalid_request', 'not a nostrconnect URI');
+    const clientPub = decodeSignerParam(u.hostname || '');
+    if (!clientPub) throw err('invalid_request', 'invalid client pubkey');
+    const relays = normalizeRelayList(u.searchParams.getAll('relay'));
+    if (relays.length === 0) throw err('invalid_request', 'no relays');
+    const secret = (u.searchParams.get('secret') || '').trim();
+    if (!secret) throw err('invalid_request', 'missing secret');
+    const name = (u.searchParams.get('name') || '').slice(0, 64);
+    const perms = u.searchParams.get('perms') || '';
+    return { clientPub, relays, secret, name, perms };
   }
 
   async function respond(clientPub, settings, id, result, error) {
@@ -366,9 +469,68 @@ export function createSignerCore(env) {
       }
     },
 
-    /** New bunker:// invitation over the settings relays. */
-    async createInvite() {
+    /**
+     * nostrconnect:// deep-link pairing (web page -> extension): parse the
+     * URI, ask the user, bind a session and answer the client's handshake.
+     * meta.origin is the page origin shown in the approval dialog.
+     * Returns { npub, relays, clientName } so the page can confirm.
+     */
+    async connectNostrConnect(raw, meta = {}) {
+      const info = parseNostrConnectUri(raw);
       const sessions = await loadSessions();
+      const existing = sessions.find((s) => s.bound && s.clientPub === info.clientPub);
+      if (!existing && sessions.filter((s) => s.bound).length >= MAX_SESSIONS) {
+        throw err('session_limit');
+      }
+      const decision = await requestApproval({
+        kind: 'nip46-nostrconnect',
+        clientName: info.name,
+        clientPub: info.clientPub,
+        relays: info.relays,
+        origin: typeof meta.origin === 'string' ? meta.origin : '',
+      });
+      if (decision !== 'allow') throw err('unauthorized', 'connection denied');
+      const token = existing ?? {
+        secret: info.secret,
+        relays: [...info.relays],
+        clientPub: null,
+        clientName: '',
+        perms: '',
+        created: now(),
+        lastActive: null,
+        bound: false,
+      };
+      token.secret = info.secret;
+      token.relays = [...info.relays];
+      token.clientPub = info.clientPub;
+      token.bound = true;
+      token.clientName = info.name;
+      token.perms = info.perms;
+      token.lastActive = now();
+      if (!sessions.includes(token)) sessions.push(token);
+      sessionsCache = sessions;
+      await saveSessions();
+      await refreshSubscriptions();
+      // Grunq node semantics (pkg/nip46 bridge.go handleResponse): in
+      // nostrconnect mode the client considers itself paired when it
+      // receives a response whose `result` equals the URI secret, so the
+      // signer's first message is a response-shaped ack. Standard NIP-46
+      // clients would expect a `connect` request instead - we follow the
+      // Grunq node because it is the primary pairing partner.
+      const priv = await signerPrivHex();
+      const payload = JSON.stringify({ id: randomHex(8), result: info.secret, error: '' });
+      const ciphertext = nip44Encrypt(priv, info.clientPub, payload);
+      const event = finalizeEvent(priv, {
+        kind: REQUEST_KIND,
+        tags: [['p', info.clientPub]],
+        content: ciphertext,
+      });
+      await transport.publish(info.relays, event);
+      return { npub: encodeNpub(info.clientPub), relays: info.relays, clientName: info.name };
+    },
+
+    /** New bunker:// invitation over the settings relays. */
+    async createInvite() {      const sessions = await loadSessions();
       const boundCount = sessions.filter((s) => s.bound).length;
       if (boundCount >= MAX_SESSIONS) throw err('session_limit');
       const settings = await defaultSettings(storage);

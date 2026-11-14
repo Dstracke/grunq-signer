@@ -9,7 +9,46 @@
   window.addEventListener('message', (ev) => {
     if (ev.source !== window) return;
     const d = ev.data;
-    if (!d || d.source !== 'grunq-signer' || d.dir !== 'page->bg') return;
+    if (!d || typeof d !== 'object') return;
+
+    // Web-side pairing (grunq-signer-web): the page pings for detection and
+    // can hand us a nostrconnect:// URI from the dashboard pairing flow.
+    if (d.source === 'grunq-signer-web') {
+      if (d.type === 'ping') {
+        window.postMessage({ source: 'grunq-signer', type: 'pong' }, '*');
+      } else if (d.type === 'nostrconnect' && typeof d.uri === 'string' && d.uri.startsWith('nostrconnect:')) {
+        api.runtime
+          .sendMessage({ type: 'web-nostrconnect', uri: d.uri })
+          .then((res) => {
+            window.postMessage(
+              {
+                source: 'grunq-signer',
+                type: 'nostrconnect-result',
+                replyId: d.replyId,
+                ok: !!(res && !res.error),
+                npub: res && !res.error ? res.npub : undefined,
+                error: res?.error ? res.error.message || res.error.code : undefined,
+              },
+              '*',
+            );
+          })
+          .catch((e) => {
+            window.postMessage(
+              {
+                source: 'grunq-signer',
+                type: 'nostrconnect-result',
+                replyId: d.replyId,
+                ok: false,
+                error: String(e?.message || e),
+              },
+              '*',
+            );
+          });
+      }
+      return;
+    }
+
+    if (d.source !== 'grunq-signer' || d.dir !== 'page->bg') return;
 
     api.runtime
       .sendMessage({ type: 'nostr-rpc', id: d.id, method: d.method, params: d.params })

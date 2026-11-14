@@ -257,6 +257,41 @@ async function handleRpc(msg, sender) {
   }
 }
 
+// ---------- web pairing (nostrconnect deep-link from pages) ----------
+
+// Only one pairing approval at a time; pages could otherwise spam approval
+// windows by repeated postMessages.
+let webPairBusy = false;
+
+async function handleWebNostrConnect(msg, sender) {
+  const origin = senderOrigin(sender);
+  if (!origin || !/^https?:$/.test(new URL(origin).protocol)) {
+    throw err('no_permission');
+  }
+  if (typeof msg.uri !== 'string' || !msg.uri.startsWith('nostrconnect:')) {
+    throw err('invalid_input');
+  }
+  if (!(await hasIdentity())) throw err('no_key');
+  if (webPairBusy) throw { code: 'busy', message: t('errorPairBusy') };
+  webPairBusy = true;
+  try {
+    return await signerCore.connectNostrConnect(msg.uri, { origin });
+  } catch (e) {
+    if (e?.nip46Code) {
+      const map = {
+        session_limit: 'nip46ErrorSessionLimit',
+        no_relays: 'nip46ErrorNoRelays',
+        unauthorized: 'nip46ErrorDenied',
+        invalid_request: 'errorInvalidInput',
+      };
+      throw { code: e.nip46Code, message: t(map[e.nip46Code] ?? 'errorInternal') };
+    }
+    throw e;
+  } finally {
+    webPairBusy = false;
+  }
+}
+
 // ---------- popup messages ----------
 
 async function handlePopup(msg) {
@@ -364,6 +399,11 @@ async function handleApprovalPage(msg) {
         event: p.req.event ?? null,
         clientName: p.req.clientName ?? '',
         clientPub: p.req.clientPub ?? null,
+        clientNpub: p.req.clientPub ? encodeNpub(p.req.clientPub) : null,
+        relays: p.req.relays ?? null,
+        scheme: p.req.scheme ?? '',
+        peer: p.req.peer ?? '',
+        payload: p.req.payload ?? '',
       };
     }
     case 'decide': {
@@ -381,6 +421,9 @@ api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   (async () => {
     if (msg?.type === 'nostr-rpc') {
       return await handleRpc(msg, sender);
+    }
+    if (msg?.type === 'web-nostrconnect') {
+      return await handleWebNostrConnect(msg, sender);
     }
     if (msg?.type === 'popup') {
       return await handlePopup(msg);

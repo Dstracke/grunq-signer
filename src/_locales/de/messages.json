@@ -77,5 +77,35 @@
   "nip46SignIntro": {
     "message": "Das verbundene Programm $CLIENT$ möchte folgendes Event mit deiner Identität signieren:",
     "placeholders": { "client": { "content": "$1" } }
-  }
+  },
+  "titleNip46NostrConnect": { "message": "Kopplung erlauben?" },
+  "nip46NostrConnectIntro": {
+    "message": "Das Programm $CLIENT$ ($NPUB$) möchte sich als NIP-46-Client mit dieser Identität verbinden.\n\nQuelle: $ORIGIN$\nRelays: $RELAYS$\n\nNach der Freigabe bestätigt die Extension die Kopplung gegenüber dem Programm.",
+    "placeholders": {
+      "client": { "content": "$1" },
+      "npub": { "content": "$2" },
+      "origin": { "content": "$3" },
+      "relays": { "content": "$4" }
+    }
+  },
+  "titleNip46Connect": { "message": "Verbindung erlauben?" },
+  "nip46ConnectIntro": {
+    "message": "Das Programm $CLIENT$ ($NPUB$) möchte sich ohne Secret verbinden – das ist nach einem Neustart des Clients normal. Erlauben?",
+    "placeholders": {
+      "client": { "content": "$1" },
+      "npub": { "content": "$2" }
+    }
+  },
+  "titleNip46Decrypt": { "message": "Nachricht entschlüsseln?" },
+  "nip46DecryptIntro": {
+    "message": "Das Programm $CLIENT$ möchte eine verschlüsselte Nachricht entschlüsseln.\n\nVerfahren: $SCHEME$\nGegenstelle: $PEER$\n\nInhalt (Anfang): $PAYLOAD$",
+    "placeholders": {
+      "client": { "content": "$1" },
+      "scheme": { "content": "$2" },
+      "peer": { "content": "$3" },
+      "payload": { "content": "$4" }
+    }
+  },
+  "errorPairBusy": { "message": "Es läuft bereits eine Kopplung – bitte kurz warten." },
+  "nip46ErrorDenied": { "message": "Kopplung oder Aktion abgelehnt." }
 }

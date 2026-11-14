@@ -77,5 +77,35 @@
   "nip46SignIntro": {
     "message": "The connected program $CLIENT$ wants to sign an event with your identity:",
     "placeholders": { "client": { "content": "$1" } }
-  }
+  },
+  "titleNip46NostrConnect": { "message": "Allow pairing?" },
+  "nip46NostrConnectIntro": {
+    "message": "The program $CLIENT$ ($NPUB$) wants to connect to this identity as a NIP-46 client.\n\nSource: $ORIGIN$\nRelays: $RELAYS$\n\nAfter approval the extension confirms the pairing to the program.",
+    "placeholders": {
+      "client": { "content": "$1" },
+      "npub": { "content": "$2" },
+      "origin": { "content": "$3" },
+      "relays": { "content": "$4" }
+    }
+  },
+  "titleNip46Connect": { "message": "Allow connection?" },
+  "nip46ConnectIntro": {
+    "message": "The program $CLIENT$ ($NPUB$) wants to connect without a secret – this is normal after a client restart. Allow?",
+    "placeholders": {
+      "client": { "content": "$1" },
+      "npub": { "content": "$2" }
+    }
+  },
+  "titleNip46Decrypt": { "message": "Decrypt message?" },
+  "nip46DecryptIntro": {
+    "message": "The program $CLIENT$ wants to decrypt an encrypted message.\n\nScheme: $SCHEME$\nPeer: $PEER$\n\nContent (start): $PAYLOAD$",
+    "placeholders": {
+      "client": { "content": "$1" },
+      "scheme": { "content": "$2" },
+      "peer": { "content": "$3" },
+      "payload": { "content": "$4" }
+    }
+  },
+  "errorPairBusy": { "message": "A pairing is already in progress – please wait a moment." },
+  "nip46ErrorDenied": { "message": "Pairing or action denied." }
 }
