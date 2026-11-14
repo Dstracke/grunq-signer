@@ -17,14 +17,18 @@ function n() {
 
 function roundtripPeer() {
   // default: use our own pubkey as encryption counterpart
-  return peerInput.value.trim() || '';
+  const peer = peerInput.value.trim();
+  if (!/^[0-9a-f]{64}$/.test(peer)) {
+    throw new Error('peer must be a 64-char hex pubkey - press "getPublicKey" to fill it in');
+  }
+  return peer;
 }
 
 document.getElementById('b-pk').addEventListener('click', async () => {
   try {
     const pk = await n().getPublicKey();
     log('pubkey:', pk);
-    if (!peerInput.value.trim()) peerInput.value = pk;
+    peerInput.value = pk;
   } catch (e) { log('getPublicKey ERROR:', e.message, e.code ? `(code ${e.code})` : ''); }
 });
 

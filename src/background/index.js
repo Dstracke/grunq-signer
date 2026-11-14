@@ -40,6 +40,10 @@ function err(code) {
   return { code, message: t(map[code] ?? 'errorInternal') };
 }
 
+// Encrypt/decrypt counterparts must be 32-byte hex pubkeys; a friendlier
+// rejection here beats raw crypto-library errors surfacing as "internal".
+const is64Hex = (s) => typeof s === 'string' && /^[0-9a-f]{64}$/.test(s);
+
 async function getStore(key, fallback = undefined) {
   const res = await api.storage.local.get(key);
   return res[key] ?? fallback;
@@ -165,7 +169,7 @@ async function handleRpc(msg, sender) {
       await requireOriginPermission(origin);
       const { privHex } = await getStore(STORE.KEY);
       const { pubkey, text } = params;
-      if (typeof pubkey !== 'string' || typeof text !== 'string') throw err('invalid_input');
+      if (!is64Hex(pubkey) || typeof text !== 'string') throw err('invalid_input');
       // NIP-07: resolve with the ciphertext string directly.
       return await nip04Encrypt(privHex, pubkey, text);
     }
@@ -174,7 +178,7 @@ async function handleRpc(msg, sender) {
       await requireOriginPermission(origin);
       const { privHex } = await getStore(STORE.KEY);
       const { pubkey, payload } = params;
-      if (typeof pubkey !== 'string' || typeof payload !== 'string') throw err('invalid_input');
+      if (!is64Hex(pubkey) || typeof payload !== 'string') throw err('invalid_input');
       return await nip04Decrypt(privHex, pubkey, payload);
     }
 
@@ -182,7 +186,7 @@ async function handleRpc(msg, sender) {
       await requireOriginPermission(origin);
       const { privHex } = await getStore(STORE.KEY);
       const { pubkey, text } = params;
-      if (typeof pubkey !== 'string' || typeof text !== 'string') throw err('invalid_input');
+      if (!is64Hex(pubkey) || typeof text !== 'string') throw err('invalid_input');
       return nip44Encrypt(privHex, pubkey, text);
     }
 
@@ -190,7 +194,7 @@ async function handleRpc(msg, sender) {
       await requireOriginPermission(origin);
       const { privHex } = await getStore(STORE.KEY);
       const { pubkey, payload } = params;
-      if (typeof pubkey !== 'string' || typeof payload !== 'string') throw err('invalid_input');
+      if (!is64Hex(pubkey) || typeof payload !== 'string') throw err('invalid_input');
       return nip44Decrypt(privHex, pubkey, payload);
     }
 
