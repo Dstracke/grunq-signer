@@ -124,10 +124,27 @@ Adapter-Layer `bg-runtime` (API-Unterschiede: SW-Lifecycle siehe §5.2,
   einmal gültig (NIP-46-Regel) und verfällt nach 10 min.
 
 **`nostrconnect://`-Pfad (Client erzeugt die URI, z. B. Grunq-Viewer):**
-- Extension-Popup hat „Koppeln": nostrconnect-URI einfügen (Clipboard-
-  Button, manuelles Einfügen, optional `?nostrconnect=`-Parameter auf der
-  Options-Seite, damit eine Web-App auf demselben Gerät direkt
-  verlinken kann).
+- **Deep-Link ohne Copy-Paste (umgesetzt, b8b0815):** Die Grunq-Signer-
+  Extension lauscht über ihr Content-Script auf `window.postMessage` der
+  Seite: `{source:"grunq-signer-web", type:"ping"}` für die Erkennung
+  (Antwort `{source:"grunq-signer", type:"pong"}`) und
+  `{type:"nostrconnect", uri, replyId}` für die Kopplung. Das Background
+  öffnet den Approval-Dialog (Client-Name, npub, Relays, **Origin der
+  Seite**), bindet nach Freigabe die Session und sendet die Antwort an
+  den Knoten; das Ergebnis geht als `{type:"nostrconnect-result",
+  replyId, ok, npub|error}` an die Seite zurück. Grunq-Dashboard:
+  Button „Mit Signer-Extension koppeln" (Grunq-Commit 391389e), Ping
+  alle 15 s, QR bleibt als Fallback sichtbar, Auto-Confirm über den
+  bestehenden Sitzungs-Poll. Nur ein Kopplungs-Approval gleichzeitig
+  (Pages könnten den Dialog sonst fluten).
+- **Handshake-Abweichung (Grunq-Knoten):** `pkg/nip46` erwartet im
+  nostrconnect-Modus als erste Signer-Nachricht eine **Response-Form**
+  `{id, result: <secret>, error: ""}` (`bridge.go handleResponse` prüft
+  `resp.Result == s.secret`), nicht den Standard-`connect`-Request. Die
+  Extension folgt der Knoten-Semantik (primärer Kopplungspartner).
+- Popup-Feld „Koppeln" (URI einfügen, Clipboard-Button, optional
+  `?nostrconnect=`-Parameter auf der Options-Seite) bleibt offen – der
+  Dashboard-Deep-Link deckt den Hauptanwendungsfall ab.
 - Nach dem Einfügen zeigt das Popup den Client-Namen, Client-Pubkey und
   die angefragten Relays; nach Bestätigung antwortet die Extension mit
   dem NIP-46-`connect`-Reply (NIP-44-verschlüsselt, `secret`-Match).
@@ -204,7 +221,16 @@ grunq_signer:settings      idle_minutes, relays (global allowlist),
 - **Pairing-Missbrauch:** nostrconnect-Secrets sind einmalig und kurz
   gültig; Sessions sind widerrufbar (Liste im Popup); unbekannte Clients
   erhalten nach Ablehnung kein Retry-Fenster (Rate-Limit auf Pairing-
-  Versuche).
+  Versuche). **Secret-lose `bunker://`-Connects** (der Grunq-Knoten
+  speichert nach nostrconnect-Pairing eine URI ohne Secret und
+  reconnectet nach Neustart mit leerem Secret) erzeugen eine
+  Bestätigungsfrage pro neuem Client-Key; der dafür vorgesehene
+  Session-Slot wird bei erneuten Secret-los-Connects wiederverwendet
+  (`provisional`-Flag), damit das Registry nicht mit toten Einträgen
+  vollläuft. **Decrypt-Gate (umgesetzt):** `nip04_decrypt`/
+  `nip44_decrypt` brauchen je Anfrage eine Bestätigung (Inhalt-Anfang
+  wird angezeigt) – verhindert das Abfischen gestohlener Ciphertexte
+  über eine gebundene Session.
 - **Relays:** globale Allowlist; Session-Relays aus der nostrconnect-URI
   nur akzeptieren, wenn sie in der Allowlist stehen oder der Nutzer sie
   einzeln bestätigt. Kein Klartext-Telemetrie-Event.
