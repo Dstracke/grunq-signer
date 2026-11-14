@@ -141,7 +141,8 @@ async function handleRpc(msg, sender) {
     case 'getPublicKey': {
       await requireOriginPermission(origin);
       const { privHex } = await getStore(STORE.KEY);
-      return { pubkey: derivePubkeyHex(privHex) };
+      // NIP-07: resolve with the hex pubkey string directly.
+      return derivePubkeyHex(privHex);
     }
 
     case 'getRelays': {
@@ -156,7 +157,8 @@ async function handleRpc(msg, sender) {
       const decision = await requestApproval({ kind: 'sign-event', origin, event });
       if (decision !== 'allow') throw err('denied');
       const { privHex } = await getStore(STORE.KEY);
-      return { event: finalizeEvent(privHex, event) };
+      // NIP-07: resolve with the signed event object directly.
+      return finalizeEvent(privHex, event);
     }
 
     case 'nip04.encrypt': {
@@ -164,7 +166,8 @@ async function handleRpc(msg, sender) {
       const { privHex } = await getStore(STORE.KEY);
       const { pubkey, text } = params;
       if (typeof pubkey !== 'string' || typeof text !== 'string') throw err('invalid_input');
-      return { payload: await nip04Encrypt(privHex, pubkey, text) };
+      // NIP-07: resolve with the ciphertext string directly.
+      return await nip04Encrypt(privHex, pubkey, text);
     }
 
     case 'nip04.decrypt': {
@@ -172,7 +175,7 @@ async function handleRpc(msg, sender) {
       const { privHex } = await getStore(STORE.KEY);
       const { pubkey, payload } = params;
       if (typeof pubkey !== 'string' || typeof payload !== 'string') throw err('invalid_input');
-      return { plaintext: await nip04Decrypt(privHex, pubkey, payload) };
+      return await nip04Decrypt(privHex, pubkey, payload);
     }
 
     case 'nip44.encrypt': {
@@ -180,7 +183,7 @@ async function handleRpc(msg, sender) {
       const { privHex } = await getStore(STORE.KEY);
       const { pubkey, text } = params;
       if (typeof pubkey !== 'string' || typeof text !== 'string') throw err('invalid_input');
-      return { payload: nip44Encrypt(privHex, pubkey, text) };
+      return nip44Encrypt(privHex, pubkey, text);
     }
 
     case 'nip44.decrypt': {
@@ -188,7 +191,7 @@ async function handleRpc(msg, sender) {
       const { privHex } = await getStore(STORE.KEY);
       const { pubkey, payload } = params;
       if (typeof pubkey !== 'string' || typeof payload !== 'string') throw err('invalid_input');
-      return { plaintext: nip44Decrypt(privHex, pubkey, payload) };
+      return nip44Decrypt(privHex, pubkey, payload);
     }
 
     default:
