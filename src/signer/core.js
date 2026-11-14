@@ -525,7 +525,22 @@ export function createSignerCore(env) {
         tags: [['p', info.clientPub]],
         content: ciphertext,
       });
-      await transport.publish(info.relays, event);
+      try {
+        await transport.publish(info.relays, event);
+      } catch (e) {
+        // The client never learned about the pairing; don't leave a bound
+        // orphan session behind (re-pairing mints a new client key).
+        if (!existing) {
+          const idx = sessions.indexOf(token);
+          if (idx >= 0) {
+            sessions.splice(idx, 1);
+            sessionsCache = sessions;
+            await saveSessions();
+            await refreshSubscriptions();
+          }
+        }
+        throw e;
+      }
       return { npub: encodeNpub(info.clientPub), relays: info.relays, clientName: info.name };
     },
 

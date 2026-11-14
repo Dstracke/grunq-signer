@@ -49,6 +49,10 @@ class RelayConn {
     this.ws = null;
     this.backoff = 1000;
     this.closed = false;
+    // Messages handed over while the socket is CONNECTING or mid-reconnect;
+    // flush() delivers them on open. Without this queue a publish issued
+    // right after a reconnect (e.g. nostrconnect pairing) would bounce.
+    this.outbox = [];
     this.connect();
   }
 
@@ -59,6 +63,7 @@ class RelayConn {
       this.ws = ws;
       ws.onopen = () => {
         this.backoff = 1000;
+        this.flush();
         this.handlers.onOpen?.(this);
       };
       ws.onmessage = (ev) => {
@@ -83,6 +88,17 @@ class RelayConn {
     }
   }
 
+  flush() {
+    while (this.outbox.length && this.ws && this.ws.readyState === WebSocket.OPEN) {
+      const msg = this.outbox.shift();
+      try {
+        this.ws.send(JSON.stringify(msg));
+      } catch {
+        break;
+      }
+    }
+  }
+
   scheduleReconnect() {
     if (this.closed) return;
     const delay = this.backoff;
@@ -91,15 +107,19 @@ class RelayConn {
   }
 
   send(msg) {
+    if (this.closed) return false;
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       try {
         this.ws.send(JSON.stringify(msg));
         return true;
       } catch {
-        return false;
+        /* fall through to the queue */
       }
     }
-    return false;
+    // CONNECTING or reconnecting: queue; flush() delivers on open.
+    if (this.outbox.length >= 16) this.outbox.shift();
+    this.outbox.push(msg);
+    return true;
   }
 
   close() {

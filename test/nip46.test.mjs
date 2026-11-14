@@ -472,6 +472,7 @@ async function relayReachable(url, timeoutMs = 5000) {
 test('E2E: mini client pairs via bunker URI and signs over a real relay', { skip: !process.env.FORCE_E2E && !(await relayReachable(RELAY_WS)) ? 'relay unreachable' : false }, async (t) => {
   const env = fakeEnv();
   env.transport = new RelayPool(); // real transport for the real relay
+  t.after(() => env.transport.close?.()); // keep the process exitable
   env.store.set(SETTINGS_STORE, { relays: [RELAY_WS], idleMinutes: 30 });
   const core = createSignerCore(env);
   await core.start();
