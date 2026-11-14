@@ -296,7 +296,44 @@ laufen unverändert im Knoten, siehe auch GQ-03.)
   Grunq-Knoten verbindet nur eine Session; doppelte Kopplung mit Hinweis
   blockieren.
 
-## 13. Non-Goals
+## 13. Verbreitung und Nutzung durch Dritte
+
+Die Extension ist bewusst **projektneutral nutzbar**: Sie definiert kein
+eigenes Protokoll, sondern implementiert nur offene NIPs (07, 44, 46, 49).
+Daraus ergibt sich die Verbreitung fast von selbst:
+
+- **Beliebige Nostr-Web-Apps** erhalten `window.nostr` per NIP-07 (Login,
+  Posten, Chat) — die Extension ist der Firefox-first-Provider (Alby ist
+  Chromium-lastig; Zen/Firefox-Nutzer brauchen eine Alternative).
+- **Mobile Signer-Apps und Clients** koppeln per `nostrconnect://` gegen den
+  Desktop-Bunker; **andere Knoten-/Server-Software** nutzt `bunker://`-
+  Einladungen — derselbe Weg wie der Grunq-Knoten (§9), ohne Grunq-Abhängigkeit.
+- **Entwickler** entwickeln gegen die vollständige NIP-07-Oberfläche und die
+  beigelegte Test-Seite (§10).
+
+Voraussetzungen, damit Dritte sie wirklich einsetzen:
+
+1. **Neutrale Defaults:** Erster Start fragt das Relay-Set ab
+   (Grunq-Relay vorausgewählt, austauschbar); UX-Texte generisch („deine
+   Signer-Extension"), Grunq-Branding dezent. Kein Feature darf Grunq-
+   Server voraussetzen.
+2. **Verteilung:** signiertes XPI auf Mozilla AMO (Firefox braucht
+   Signaturen außer für temporäre Installation), Chrome Web Store,
+   zusätzlich Release-XPI im Repo (Self-Distribution).
+3. **Entwickler-Onboarding:** Test-Seite (window.nostr-Aufrufe,
+   nip44-Roundtrip) und Kurzdoku als Teil des Repos.
+4. **Kosten-Grenze:** Mehr Verbreitung erhöht den Traffic auf
+   `relay.grunq.com`. Das Relay bleibt offen für alle (GQ-01), aber
+   Kapazitäts-Envelopes (Connection-Limits, Rate-Limits) gehören in den
+   Relay-Betrieb — sonst trägt der Grunq-Server das Wachstum fremder
+   Ökosysteme. Erstinstallation weist darauf hin, dass das Grunq-Relay
+   ein gemeinschaftlich betriebener Standard-Endpunkt ist.
+
+Open-Core-Einordnung: Die Extension bleibt komplett AGPL-3.0 und gehört
+zur offenen Client-Seite; keine proprietären Bestandteile (Zahlungs-Gateway,
+gehostete Relays) fließen ein.
+
+## 14. Non-Goals
 
 - Keine Wallet-Funktionen (NWC senden), kein lightning-Zapping aus der
   Extension (GQ-27 lebt im Knoten/Browser).
