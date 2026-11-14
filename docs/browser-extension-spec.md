@@ -219,6 +219,12 @@ grunq_signer:settings      idle_minutes, relays (global allowlist),
   ist sichtbar, editierbar und löschbar — keine Cloud-Pflicht; ist das
   Grunq-Relay nicht erreichbar oder nicht gewünscht, läuft alles
   unverändert über die User-Relays.
+  **Randbedingung (14.11.2026 verifiziert):** Ein Connect-Relay muss
+  freie Writes erlauben — NIP-46-Clients signieren mit ephemeren Keys,
+  Pubkey-Allowlists sind dort sinnlos. Fallstrick in nostr-rs-relay:
+  `pubkey_whitelist` ist eine Option; vorhanden (auch leere Liste)
+  blockiert ALLE Writes. Das Bootstrap-Relay läuft deshalb ohne
+  Whitelist; Spamschutz über Rate-/Größen-Limits (5 msg/s, 64 KiB).
 - **Nutzerprofil:** Die Extension pflegt das öffentliche Nostr-Profil
   (Kind 0: `name`, `display_name`, `about`, `picture`, `nip05`, `lud16`)
   in einem Profil-Editor und veröffentlicht es beim Speichern an die
