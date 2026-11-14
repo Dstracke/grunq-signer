@@ -1,0 +1,54 @@
+{
+  "extName": { "message": "Grunq Signer" },
+  "extDescription": { "message": "Nostr-Signer-Extension: NIP-07-Provider (window.nostr) für Web-Apps. Deine Schlüssel bleiben in der Extension." },
+  "popupSetupHint": { "message": "Noch keine Identität eingerichtet. Importiere deinen Schlüssel (nsec1…) oder erstelle eine neue – sie verlässt die Extension nie." },
+  "keyPlaceholder": { "message": "nsec1… oder 64-stelliger Hex-Schlüssel" },
+  "btnImport": { "message": "Importieren" },
+  "btnGenerate": { "message": "Neu erstellen" },
+  "identityHeading": { "message": "Identität" },
+  "btnCopy": { "message": "npub kopieren" },
+  "btnCopied": { "message": "Kopiert!" },
+  "btnRemove": { "message": "Identität löschen" },
+  "confirmRemove": { "message": "Identität wirklich aus der Extension löschen? Der Schlüssel ist danach unwiederbringlich weg – stelle sicher, dass du ein Backup hast." },
+  "approvalsHeading": { "message": "Website-Freigaben" },
+  "noApprovals": { "message": "Noch keine Freigaben." },
+  "btnRevoke": { "message": "Entfernen" },
+  "popupHint": { "message": "Websites mit Freigabe erhalten window.nostr (NIP-07). Jede Signatur bestätigst du im Extra-Fenster." },
+  "errorNoKey": { "message": "Keine Identität eingerichtet – bitte zuerst die Extension öffnen und einen Schlüssel hinterlegen." },
+  "errorDenied": { "message": "Die Website hat keinen Zugriff erhalten." },
+  "errorInvalidInput": { "message": "Ungültige Anfrage." },
+  "errorNoPermission": { "message": "Für diese Aktion fehlt die Freigabe." },
+  "errorInternal": { "message": "Interner Fehler." },
+  "errorUnknownMethod": {
+    "message": "Unbekannte Methode: $METHOD$",
+    "placeholders": { "method": { "content": "$1" } }
+  },
+  "timeout": { "message": "Zeitüberschreitung beim Warten auf die Signer-Extension" },
+  "titleLoading": { "message": "Freigabe anfragen…" },
+  "titleAccess": { "message": "Website-Zugriff auf window.nostr" },
+  "titleSign": { "message": "Event signieren?" },
+  "titleStale": { "message": "Anfrage veraltet" },
+  "staleText": { "message": "Diese Anfrage existiert nicht mehr (veraltet oder bereits entschieden)." },
+  "accessIntro": {
+    "message": "Die Website $ORIGIN$ möchte window.nostr nutzen.\n\nDamit kann sie deinen öffentlichen Schlüssel lesen und dich um Signaturen sowie verschlüsselte Nachrichten (NIP-04/NIP-44) bitten. Jede Signatur wird separat bestätigt.",
+    "placeholders": { "origin": { "content": "$1" } }
+  },
+  "signIntro": {
+    "message": "Die Website $ORIGIN$ möchte folgendes Event mit deiner Identität signieren:",
+    "placeholders": { "origin": { "content": "$1" } }
+  },
+  "eventMeta": {
+    "message": "Website: $ORIGIN$\nArt (kind): $KIND$\nZeit: $TIME$\nTags: $TAGS$",
+    "placeholders": {
+      "origin": { "content": "$1" },
+      "kind": { "content": "$2" },
+      "time": { "content": "$3" },
+      "tags": { "content": "$4" }
+    }
+  },
+  "btnAllow": { "message": "Zulassen" },
+  "btnAlways": { "message": "Immer zulassen" },
+  "btnDeny": { "message": "Ablehnen" },
+  "btnSign": { "message": "Signieren" },
+  "decisionSaved": { "message": "Entscheidung gespeichert – dieses Fenster kann geschlossen werden." }
+}

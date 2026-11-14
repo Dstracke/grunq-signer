@@ -1,0 +1,54 @@
+{
+  "extName": { "message": "Grunq Signer" },
+  "extDescription": { "message": "Nostr signer extension: NIP-07 provider (window.nostr) for web apps. Your keys stay in the extension." },
+  "popupSetupHint": { "message": "No identity set up yet. Import your key (nsec1…) or create a new one — it never leaves the extension." },
+  "keyPlaceholder": { "message": "nsec1… or 64-character hex key" },
+  "btnImport": { "message": "Import" },
+  "btnGenerate": { "message": "Create new" },
+  "identityHeading": { "message": "Identity" },
+  "btnCopy": { "message": "Copy npub" },
+  "btnCopied": { "message": "Copied!" },
+  "btnRemove": { "message": "Delete identity" },
+  "confirmRemove": { "message": "Really delete the identity from the extension? The key is gone for good — make sure you have a backup." },
+  "approvalsHeading": { "message": "Site approvals" },
+  "noApprovals": { "message": "No approvals yet." },
+  "btnRevoke": { "message": "Remove" },
+  "popupHint": { "message": "Approved sites get window.nostr (NIP-07). You confirm every signature in a separate window." },
+  "errorNoKey": { "message": "No identity set up yet — open the extension first and add a key." },
+  "errorDenied": { "message": "The website was not granted access." },
+  "errorInvalidInput": { "message": "Invalid request." },
+  "errorNoPermission": { "message": "Approval missing for this action." },
+  "errorInternal": { "message": "Internal error." },
+  "errorUnknownMethod": {
+    "message": "Unknown method: $METHOD$",
+    "placeholders": { "method": { "content": "$1" } }
+  },
+  "timeout": { "message": "Timed out waiting for the signer extension" },
+  "titleLoading": { "message": "Requesting approval…" },
+  "titleAccess": { "message": "Website access to window.nostr" },
+  "titleSign": { "message": "Sign event?" },
+  "titleStale": { "message": "Request stale" },
+  "staleText": { "message": "This request no longer exists (stale or already decided)." },
+  "accessIntro": {
+    "message": "The website $ORIGIN$ wants to use window.nostr.\n\nThat lets it read your public key and ask for signatures as well as encrypted messages (NIP-04/NIP-44). Every signature is confirmed separately.",
+    "placeholders": { "origin": { "content": "$1" } }
+  },
+  "signIntro": {
+    "message": "The website $ORIGIN$ wants to sign the following event with your identity:",
+    "placeholders": { "origin": { "content": "$1" } }
+  },
+  "eventMeta": {
+    "message": "Website: $ORIGIN$\nKind: $KIND$\nTime: $TIME$\nTags: $TAGS$",
+    "placeholders": {
+      "origin": { "content": "$1" },
+      "kind": { "content": "$2" },
+      "time": { "content": "$3" },
+      "tags": { "content": "$4" }
+    }
+  },
+  "btnAllow": { "message": "Allow" },
+  "btnAlways": { "message": "Always allow" },
+  "btnDeny": { "message": "Deny" },
+  "btnSign": { "message": "Sign" },
+  "decisionSaved": { "message": "Decision saved — this window can be closed." }
+}

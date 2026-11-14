@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>smoke</title></head>
+<body>
+<div id="result">pending</div>
+<script>
+  // Injection smoke check: the extension's MAIN-world shim must define window.nostr
+  // at document_start. No methods are called (no approval dialog needed).
+  const el = document.getElementById('result');
+  const shim = typeof window.nostr === 'object' && window.nostr !== null;
+  const apiOk = shim
+    && typeof window.nostr.getPublicKey === 'function'
+    && typeof window.nostr.signEvent === 'function'
+    && typeof window.nostr.nip44?.encrypt === 'function'
+    && typeof window.nostr.nip04?.decrypt === 'function';
+  let frozen = false;
+  if (shim) {
+    try { window.nostr = { fake: 1 }; frozen = window.nostr && !window.nostr.fake; }
+    catch { frozen = true; }
+  }
+  el.textContent = 'NOSTR-SHIM-PRESENT api=' + apiOk + ' frozen=' + frozen;
+  document.title = apiOk && frozen ? 'SMOKE-OK' : 'SMOKE-FAIL';
+</script>
+</body>
+</html>

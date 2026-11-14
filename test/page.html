@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Grunq Signer – test page</title>
+  <style>
+    :root { color-scheme: dark; }
+    body { background: #0d1117; color: #e6edf3; font: 14px/1.6 system-ui, sans-serif;
+           max-width: 760px; margin: 2rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.2rem; } .btns { display: flex; gap: .5rem; flex-wrap: wrap; }
+    button { background: #23c55e; border: 0; color: #04140a; font-weight: 600;
+             padding: .5rem 1rem; border-radius: 8px; cursor: pointer; }
+    button.ghost { background: #21262d; color: #e6edf3; border: 1px solid #30363d; }
+    input { background: #161b22; border: 1px solid #30363d; color: #e6edf3;
+            padding: .5rem; border-radius: 8px; width: 320px; }
+    pre { background: #161b22; border: 1px solid #30363d; border-radius: 10px;
+          padding: 1rem; white-space: pre-wrap; word-break: break-all; min-height: 3rem; }
+    .muted { color: #8b949e; }
+  </style>
+</head>
+<body>
+  <h1>Grunq Signer – NIP-07 test page</h1>
+  <p class="muted">
+    This page calls <code>window.nostr</code> (NIP-07). The first call opens an
+    approval dialog; every signature needs a separate confirmation. Serve it
+    over plain HTTP, e.g. <code>python3 -m http.server 8777</code>, then open
+    <code>http://localhost:8777/test/page.html</code>.
+  </p>
+
+  <p class="btns">
+    <button id="b-pk">getPublicKey</button>
+    <button id="b-relays">getRelays</button>
+    <button id="b-sign">signEvent (kind 1)</button>
+    <button id="b-nip04" class="ghost">nip04 roundtrip</button>
+    <button id="b-nip44" class="ghost">nip44 roundtrip</button>
+    <input id="peer" placeholder="counterparty npub/hex (for roundtrips)">
+  </p>
+
+  <pre id="out" class="muted">Results appear here…</pre>
+
+  <script src="page.js"></script>
+</body>
+</html>

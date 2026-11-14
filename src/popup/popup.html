@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Grunq Signer</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <span class="logo">◆</span>
+    <h1>Grunq Signer</h1>
+  </header>
+
+  <main id="view-import" hidden>
+    <p class="hint" data-i18n="popupSetupHint"></p>
+    <textarea id="key-input" rows="3" spellcheck="false"
+      data-i18n-placeholder="keyPlaceholder"></textarea>
+    <div class="row">
+      <button id="btn-import" class="primary" data-i18n="btnImport"></button>
+      <button id="btn-generate" data-i18n="btnGenerate"></button>
+    </div>
+    <p id="import-error" class="error" hidden></p>
+  </main>
+
+  <main id="view-identity" hidden>
+    <section class="card">
+      <h2 data-i18n="identityHeading"></h2>
+      <p id="npub" class="npub">…</p>
+      <p id="pubkey-short" class="muted mono">…</p>
+      <div class="row">
+        <button id="btn-copy" data-i18n="btnCopy"></button>
+        <button id="btn-remove" class="danger" data-i18n="btnRemove"></button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 data-i18n="approvalsHeading"></h2>
+      <ul id="approvals" class="approvals"></ul>
+      <p id="no-approvals" class="muted" data-i18n="noApprovals"></p>
+    </section>
+
+    <p class="hint" data-i18n="popupHint"></p>
+  </main>
+
+  <script src="popup.js"></script>
+</body>
+</html>

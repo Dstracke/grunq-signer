@@ -1,0 +1,58 @@
+:root {
+  color-scheme: dark;
+  --bg: #0d1117;
+  --card: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --accent: #39ff88;
+  --accent-dim: #23c55e;
+  --danger: #ff5c74;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 16px;
+  background: var(--bg);
+  color: var(--text);
+  font: 13px/1.55 system-ui, sans-serif;
+}
+
+h1 { font-size: 15px; margin: 0 0 12px; }
+
+.content {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.origin { color: var(--accent); font-family: ui-monospace, monospace; }
+
+.event-meta { color: var(--muted); font-size: 12px; }
+.event-content { margin-top: 8px; }
+.muted { color: var(--muted); }
+
+.actions { display: flex; gap: 8px; }
+
+button {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #21262d;
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+button:hover { background: #2d333b; }
+button.primary { background: var(--accent-dim); border-color: var(--accent-dim); color: #04140a; font-weight: 600; }
+button.primary:hover { background: var(--accent); }
+button.danger { color: var(--danger); border-color: #5c2834; }
+button.danger:hover { background: #3b1620; }
