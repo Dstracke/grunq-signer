@@ -72,3 +72,12 @@ signature needs a separate confirmation.
 
 GNU Affero General Public License v3.0 (AGPL-3.0), see
 [`LICENSE`](LICENSE) — same as the Grunq node.
+
+Exceptions:
+
+- **Inter Tight** (`src/fonts/InterTight-Variable.woff2`, used by the popup
+  and approval dialog) is licensed under the SIL Open Font License 1.1 —
+  same bundled font as the Grunq node web UI. The license text is available
+  in the Grunq repository (`THIRD_PARTY_NOTICES.md`).
+- **noble libraries** (`@noble/curves`, `@noble/hashes`, `@noble/ciphers`,
+  MIT) are bundled into the build; see their upstream repositories.

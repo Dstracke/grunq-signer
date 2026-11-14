@@ -1,58 +1,171 @@
+/* Grunq Signer approval dialog - Grunq "Neon Broadcast" design language.
+   Same tokens as the node web UI (web/static/css/style.css in the grunq repo):
+   dark stage, blue signal, pink "live", lime accents; Inter Tight bundled
+   locally (SIL OFL 1.1), no CDN. */
+
+@font-face {
+  font-family: "Inter Tight";
+  src: url("../fonts/InterTight-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   color-scheme: dark;
-  --bg: #0d1117;
-  --card: #161b22;
-  --border: #30363d;
-  --text: #e6edf3;
-  --muted: #8b949e;
-  --accent: #39ff88;
-  --accent-dim: #23c55e;
-  --danger: #ff5c74;
+  --bg: #05070a;
+  --surface: #0b0f15;
+  --surface-2: #10161f;
+  --surface-3: #070a0f;
+  --border: #1e2836;
+  --border-strong: #2b3a4d;
+  --text: #f1f5fa;
+  --muted: #8391a3;
+  --accent: #3d8bff;
+  --accent-strong: #2f6fe0;
+  --accent-soft: rgba(61, 139, 255, 0.14);
+  --pink: #ff3d81;
+  --pink-soft: rgba(255, 61, 129, 0.12);
+  --lime: #b8ff4a;
+  --lime-soft: rgba(184, 255, 74, 0.12);
+  --danger: #ff5470;
+  --radius: 16px;
+  --radius-sm: 9px;
+  --shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+  --glow: 0 0 0 1px rgba(61, 139, 255, 0.08) inset;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "DejaVu Sans Mono", monospace;
+  --font: "Inter Tight", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
 
 body {
+  min-width: 380px;
+  max-width: 480px;
   margin: 0;
   padding: 16px;
-  background: var(--bg);
+  background:
+    radial-gradient(640px 340px at 85% -12%, rgba(61, 139, 255, 0.22), transparent 62%),
+    radial-gradient(440px 300px at 0% 0%, rgba(255, 61, 129, 0.12), transparent 58%),
+    var(--bg);
   color: var(--text);
-  font: 13px/1.55 system-ui, sans-serif;
+  font-family: var(--font);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
-h1 { font-size: 15px; margin: 0 0 12px; }
+header {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 12px;
+}
+
+header .logo {
+  border-radius: 7px;
+  box-shadow: 0 0 14px -4px rgba(61, 139, 255, 0.7);
+}
+
+h1 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
 
 .content {
-  background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 45%),
+    var(--surface);
+  box-shadow: var(--shadow), var(--glow);
   padding: 12px;
   margin-bottom: 14px;
   white-space: pre-wrap;
   word-break: break-word;
 }
 
-.origin { color: var(--accent); font-family: ui-monospace, monospace; }
+.origin {
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 12px;
+}
 
-.event-meta { color: var(--muted); font-size: 12px; }
-.event-content { margin-top: 8px; }
-.muted { color: var(--muted); }
+.event-meta {
+  color: var(--muted);
+  font-size: 12px;
+}
 
-.actions { display: flex; gap: 8px; }
+.event-meta b {
+  color: var(--lime);
+  font-weight: 600;
+}
+
+.event-content {
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
 
 button {
   flex: 1;
   padding: 8px 10px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: #21262d;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-2);
   color: var(--text);
+  font-family: var(--font);
   font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
 }
 
-button:hover { background: #2d333b; }
-button.primary { background: var(--accent-dim); border-color: var(--accent-dim); color: #04140a; font-weight: 600; }
-button.primary:hover { background: var(--accent); }
-button.danger { color: var(--danger); border-color: #5c2834; }
-button.danger:hover { background: #3b1620; }
+button:hover {
+  background: var(--surface-3);
+  box-shadow: 0 0 14px -6px rgba(61, 139, 255, 0.55);
+}
+
+button.primary {
+  background: var(--accent-strong);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+button.primary:hover {
+  background: var(--accent);
+  box-shadow: 0 0 18px -6px rgba(61, 139, 255, 0.6);
+}
+
+button.danger {
+  color: var(--danger);
+  border-color: rgba(255, 84, 112, 0.4);
+}
+
+button.danger:hover {
+  background: rgba(255, 84, 112, 0.12);
+  box-shadow: 0 0 14px -6px rgba(255, 84, 112, 0.6);
+}
+
+#status {
+  margin: 10px 0 0;
+  font-size: 12px;
+}

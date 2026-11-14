@@ -34,11 +34,14 @@ async function copyTree(src, dest, extensions) {
   }
 }
 
-// manifest + html/css/_locales into the same relative paths the bundles live in
-// (esbuild output is not overwritten because only html/css/json are copied)
+// manifest + html/css/_locales plus icons and the bundled font into the same
+// relative paths the bundles live in (esbuild output is not overwritten
+// because only html/css/png/woff2/json are copied)
 await cp('src/manifest.json', join(OUT, 'manifest.json'));
 for (const dir of ['popup', 'approval']) {
   await copyTree(join('src', dir), join(OUT, dir), ['html', 'css']);
 }
 await copyTree(join('src', '_locales'), join(OUT, '_locales'), ['json']);
+await copyTree(join('src', 'icons'), join(OUT, 'icons'), ['png']);
+await copyTree(join('src', 'fonts'), join(OUT, 'fonts'), ['woff2']);
 console.log('dist/ ready');
