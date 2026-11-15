@@ -174,6 +174,28 @@ export function createSignerCore(env) {
     return sessions.find((s) => s.bound && s.clientPub === clientPub) ?? null;
   }
 
+  // NIP-46 permission strings are comma-separated entries like
+  // 'sign_event', 'sign_event:1311', 'nip44_decrypt'. An entry without a
+  // parameter grants the method for every argument.
+  function hasPerm(perms, method, arg = '') {
+    if (typeof perms !== 'string' || !perms.trim()) return false;
+    for (const entry of perms.split(',')) {
+      const [name, ...rest] = entry.trim().split(':');
+      if (name !== method) continue;
+      if (rest.length === 0 || rest.join(':') === String(arg)) return true;
+    }
+    return false;
+  }
+
+  // Appends a permission entry without duplicates, preserving order.
+  function appendPerm(perms, entry) {
+    const list = typeof perms === 'string' && perms.trim()
+      ? perms.split(',').map((s) => s.trim()).filter(Boolean)
+      : [];
+    if (!list.includes(entry)) list.push(entry);
+    return list.join(',');
+  }
+
   function touch(s) {
     s.lastActive = now();
   }
@@ -311,13 +333,26 @@ export function createSignerCore(env) {
         if (!event || typeof event !== 'object' || !Number.isInteger(event.kind)) {
           throw err('invalid_request');
         }
-        const decision = await requestApproval({
-          kind: 'nip46-sign',
-          clientName: s.clientName || '',
-          clientPub: s.clientPub,
-          event,
-        });
-        if (decision !== 'allow') throw err('unauthorized', 'signature denied');
+        // Honored NIP-46 permissions: a client that connected with
+        // 'sign_event' (any kind) or 'sign_event:<kind>' signs without a
+        // popup. Without this, bunker clients that sign continuously (the
+        // Grunq node publishes announcements, chat and playlist mirrors
+        // every few seconds) flood the desktop with approval windows.
+        if (!hasPerm(s.perms, 'sign_event', event.kind)) {
+          const decision = await requestApproval({
+            kind: 'nip46-sign',
+            clientName: s.clientName || '',
+            clientPub: s.clientPub,
+            event,
+          });
+          if (decision === 'always') {
+            // User-granted persistent permission, scoped to this event
+            // kind. Decrypt stays per-request on purpose.
+            s.perms = appendPerm(s.perms, `sign_event:${event.kind}`);
+          } else if (decision !== 'allow') {
+            throw err('unauthorized', 'signature denied');
+          }
+        }
         await saveSessions();
         const signed = finalizeEvent(priv, event);
         return JSON.stringify(signed);

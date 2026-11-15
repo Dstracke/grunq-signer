@@ -72,6 +72,10 @@
   "btnAlways": { "message": "Always allow" },
   "btnDeny": { "message": "Deny" },
   "btnSign": { "message": "Sign" },
+  "btnAlwaysSignKind": {
+    "message": "Always allow kind $KIND$",
+    "placeholders": { "kind": { "content": "$1" } }
+  },
   "decisionSaved": { "message": "Decision saved — this window can be closed." },
   "titleNip46Sign": { "message": "Sign event for a connected program?" },
   "nip46SignIntro": {

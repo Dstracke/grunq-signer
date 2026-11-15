@@ -71,7 +71,12 @@ async function init() {
     content.textContent = t('nip46SignIntro', [clientLabel(info)]) + '\n\n';
     content.append(...eventPreview(info.event ?? {}, clientLabel(info), 'eventMetaNip46'));
     document.getElementById('btn-allow').textContent = t('btnSign');
-    hideAlways();
+    // "Always" stores a per-kind sign permission for this client, so a
+    // bunker client signing continuously (streaming announcements, chat,
+    // playlist mirrors) does not reopen a window every few seconds.
+    const always = document.getElementById('btn-always');
+    always.hidden = false;
+    always.textContent = t('btnAlwaysSignKind', [String(info.event?.kind ?? '?')]);
   } else if (info.kind === 'nip46-nostrconnect') {
     content.textContent = t('nip46NostrConnectIntro', [
       clientLabel(info),

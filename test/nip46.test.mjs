@@ -184,6 +184,103 @@ test('core: denied sign_event answers error', async () => {
   assert.equal(resp.result, '');
 });
 
+test('core: generic sign_event perm from connect signs without approval', async () => {
+  const env = fakeEnv();
+  const approvals = [];
+  env.requestApproval = async (info) => {
+    approvals.push(info);
+    return 'allow';
+  };
+  const core = createSignerCore(env);
+  await core.start();
+  const invite = await core.createInvite();
+  const client = makeClient();
+  // The Grunq dashboard pairs with 'sign_event,get_public_key,switch_relays'
+  // because the node signs announcements, chat, moderation and playlist
+  // mirrors continuously - every request must not reopen a popup.
+  await requestViaCore(env, core, client, 'connect', [
+    env.pub, invite.secret, 'sign_event,get_public_key', JSON.stringify({ name: 'Grunq' }),
+  ]);
+
+  for (const kind of [1311, 30311, 20003, 1]) {
+    const resp = await requestViaCore(env, core, client, 'sign_event', [
+      JSON.stringify({ kind, content: 'auto', created_at: 1, tags: [] }),
+    ]);
+    const signed = JSON.parse(resp.result);
+    assert.equal(signed.kind, kind);
+    assert.ok(verifyEvent(signed));
+  }
+  assert.equal(approvals.length, 0, 'no popup for permitted kinds');
+});
+
+test('core: kind-scoped sign_event perm covers only the granted kind', async () => {
+  const env = fakeEnv();
+  const approvals = [];
+  env.requestApproval = async (info) => {
+    approvals.push(info);
+    return 'allow';
+  };
+  const core = createSignerCore(env);
+  await core.start();
+  const invite = await core.createInvite();
+  const client = makeClient();
+  // Viewer pairing requests only chat signing: sign_event:1311
+  await requestViaCore(env, core, client, 'connect', [
+    env.pub, invite.secret, 'sign_event:1311,get_public_key', '',
+  ]);
+
+  const ok = await requestViaCore(env, core, client, 'sign_event', [
+    JSON.stringify({ kind: 1311, content: 'chat', created_at: 1, tags: [] }),
+  ]);
+  assert.equal(JSON.parse(ok.result).kind, 1311);
+  assert.equal(approvals.length, 0);
+
+  const resp = await requestViaCore(env, core, client, 'sign_event', [
+    JSON.stringify({ kind: 1, content: 'other', created_at: 1, tags: [] }),
+  ]);
+  assert.equal(JSON.parse(resp.result).kind, 1);
+  assert.equal(approvals.length, 1, 'foreign kinds still ask');
+  assert.equal(approvals[0].event.kind, 1);
+});
+
+test('core: "always" decision stores a per-kind sign permission', async () => {
+  const env = fakeEnv();
+  const approvals = [];
+  env.requestApproval = async (info) => {
+    approvals.push(info);
+    return 'always';
+  };
+  const core = createSignerCore(env);
+  await core.start();
+  const invite = await core.createInvite();
+  const client = makeClient();
+  await requestViaCore(env, core, client, 'connect', [env.pub, invite.secret, '', '']);
+
+  // First sign asks and stores sign_event:20003 (playlist mirror kind).
+  const first = await requestViaCore(env, core, client, 'sign_event', [
+    JSON.stringify({ kind: 20003, content: 'grunq-playlist:x', created_at: 1, tags: [] }),
+  ]);
+  assert.ok(verifyEvent(JSON.parse(first.result)));
+  assert.equal(approvals.length, 1);
+
+  // Follow-up signs of the same kind no longer ask.
+  const second = await requestViaCore(env, core, client, 'sign_event', [
+    JSON.stringify({ kind: 20003, content: 'grunq-playlist:y', created_at: 2, tags: [] }),
+  ]);
+  assert.ok(verifyEvent(JSON.parse(second.result)));
+  assert.equal(approvals.length, 1, 'remembered permission skips the popup');
+
+  // Another kind still asks, and the stored permission is kind-scoped.
+  const third = await requestViaCore(env, core, client, 'sign_event', [
+    JSON.stringify({ kind: 1311, content: 'chat', created_at: 3, tags: [] }),
+  ]);
+  assert.ok(verifyEvent(JSON.parse(third.result)));
+  assert.equal(approvals.length, 2);
+
+  const sessions = await core.listSessions();
+  assert.equal(sessions[0].perms, 'sign_event:20003,sign_event:1311');
+});
+
 test('core: nip44 roundtrip uses the user key', async () => {
   const env = fakeEnv();
   const core = createSignerCore(env);

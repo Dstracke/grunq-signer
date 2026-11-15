@@ -189,6 +189,21 @@ Delegation (NIP-26) in Stufe 1.
   Auf `auth_url`-Flow verzichtet die Extension bewusst — Bestätigung
   läuft nativ im Popup, nicht als Web-Redirect (schließt den
   Phishing-Vektor, den NIP-146-Diskussion offenhielt).
+  **Bunker-Perms erzwingen (umgesetzt, Popup-Flut-Fix):** Der
+  `connect`-Request trägt einen NIP-46-Perms-String (`sign_event`,
+  `sign_event:<kind>`, …); die Extension speichert ihn pro Session
+  (`token.perms`) und **erzwingt** ihn jetzt in `sign_event`: Ein
+  Client mit generischem `sign_event`-Perm (der Grunq-Knoten koppelt
+  mit `sign_event,get_public_key,switch_relays`) signiert jede Kind-Art
+  ohne Popup; `sign_event:1311` (Viewer-Kopplung) erlaubt nur Chat.
+  Ohne Perm erscheint zusätzlich ein **„Kind $K$ immer zulassen"**-
+  Button; die Entscheidung legt `sign_event:<kind>` dauerhaft in die
+  Session-Perms. Hintergrund: Der Knoten signiert im Bunker-Betrieb
+  laufend (Playlist-Spiegel alle 2 s, Ankündigung alle 20 min, Chat,
+  Moderation) — ohne Perms/Erinnerung fluteten Approval-Fenster mit
+  `grunq-playlist:`-Inhalten den Desktop (beobachtet gegen den echten
+  Knoten, 15.11.2026). Das Decrypt-Gate bleibt bewusst je-Anfrage
+  (§7), `saveSessions` läuft nach jeder Signatur.
 - Antworten mit klaren Fehlercodes (`error:<code>:<id>`),
   z. B. `locked`, `unauthorized`, `unknown_method`.
 

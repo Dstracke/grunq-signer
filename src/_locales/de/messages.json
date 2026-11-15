@@ -72,6 +72,10 @@
   "btnAlways": { "message": "Immer zulassen" },
   "btnDeny": { "message": "Ablehnen" },
   "btnSign": { "message": "Signieren" },
+  "btnAlwaysSignKind": {
+    "message": "Kind $KIND$ immer zulassen",
+    "placeholders": { "kind": { "content": "$1" } }
+  },
   "decisionSaved": { "message": "Entscheidung gespeichert – dieses Fenster kann geschlossen werden." },
   "titleNip46Sign": { "message": "Event für ein verbundenes Programm signieren?" },
   "nip46SignIntro": {
