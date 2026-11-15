@@ -66,7 +66,14 @@ async function init() {
     content.textContent = t('signIntro', [info.origin]) + '\n\n';
     content.append(...eventPreview(info.event ?? {}, info.origin));
     document.getElementById('btn-allow').textContent = t('btnSign');
-    hideAlways();
+    // "Always" remembers this event kind for the page (per-origin), so
+    // chat signers do not reopen a window per message.
+    const always = document.getElementById('btn-always');
+    always.hidden = false;
+    always.textContent = t('btnAlwaysSignKindOrigin', [
+      String(info.event?.kind ?? '?'),
+      info.origin || '?',
+    ]);
   } else if (info.kind === 'nip46-sign') {
     content.textContent = t('nip46SignIntro', [clientLabel(info)]) + '\n\n';
     content.append(...eventPreview(info.event ?? {}, clientLabel(info), 'eventMetaNip46'));

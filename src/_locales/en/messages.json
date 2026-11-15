@@ -76,6 +76,17 @@
     "message": "Always allow kind $KIND$",
     "placeholders": { "kind": { "content": "$1" } }
   },
+  "btnAlwaysSignKindOrigin": {
+    "message": "Always allow kind $KIND$ from $ORIGIN$",
+    "placeholders": {
+      "kind": { "content": "$1" },
+      "origin": { "content": "$2" }
+    }
+  },
+  "permSignKinds": {
+    "message": "Signs without asking: kind $KINDS$",
+    "placeholders": { "kinds": { "content": "$1" } }
+  },
   "decisionSaved": { "message": "Decision saved — this window can be closed." },
   "titleNip46Sign": { "message": "Sign event for a connected program?" },
   "nip46SignIntro": {

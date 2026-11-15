@@ -76,6 +76,17 @@
     "message": "Kind $KIND$ immer zulassen",
     "placeholders": { "kind": { "content": "$1" } }
   },
+  "btnAlwaysSignKindOrigin": {
+    "message": "Kind $KIND$ von $ORIGIN$ immer zulassen",
+    "placeholders": {
+      "kind": { "content": "$1" },
+      "origin": { "content": "$2" }
+    }
+  },
+  "permSignKinds": {
+    "message": "Signieren ohne Nachfrage: Kind $KINDS$",
+    "placeholders": { "kinds": { "content": "$1" } }
+  },
   "decisionSaved": { "message": "Entscheidung gespeichert – dieses Fenster kann geschlossen werden." },
   "titleNip46Sign": { "message": "Event für ein verbundenes Programm signieren?" },
   "nip46SignIntro": {

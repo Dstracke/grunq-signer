@@ -42,7 +42,9 @@ async function refresh() {
       const li = document.createElement('li');
       const origin = document.createElement('span');
       origin.className = 'origin';
-      origin.textContent = a.origin;
+      origin.textContent = a.signKinds?.length
+        ? `${a.origin} · ${t('permSignKinds', [a.signKinds.join(', ')])}`
+        : a.origin;
       const btn = document.createElement('button');
       btn.className = 'danger';
       btn.textContent = t('btnRevoke');

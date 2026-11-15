@@ -94,6 +94,14 @@ Adapter-Layer `bg-runtime` (API-Unterschiede: SW-Lifecycle siehe §5.2,
   Seite öffnet der Background eine Bestätigung (Popup-Dialog): Domain
   sichtbar, „Zulassen" / „Immer zulassen" / „Ablehnen". Freigaben pro
   Origin in einer Allowlist; Revoke über das Popup.
+- **Signier-Erinnerung pro Kind (umgesetzt):** `signEvent` zeigt standard-
+  mäßig je Event einen Dialog — Chat-Schreiber (der Grunq-Viewer postet
+  Kind 1311 pro Nachricht) würden sonst pro Nachricht ein Fenster
+  öffnen. Der Dialog trägt deshalb **„Kind $K$ von $ORIGIN$ immer
+  zulassen"**: Die Entscheidung legt `sign_kinds: [<kind>]` dauerhaft
+  unter der Origin in `grunq_signer:permissions` ab; weitere Kind-Arten
+  fragen weiter ab, Revoke über das Popup (Anzeige „Signieren ohne
+  Nachfrage: Kind …"). Decrypt-Methoden bleiben je-Anfrage.
 - **CSP-neutral:** kein Inline-Script; Wrapper wird über
   `world: "MAIN"`-registriertes Script gesetzt (Chromium ≥ 111, Firefox
   ≥ 128) bzw. Fallback per `<script src>`-Injection aus Extension-URL.

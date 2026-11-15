@@ -124,6 +124,25 @@ async function requireOriginPermission(origin) {
   throw err('denied');
 }
 
+// Kind-scoped NIP-07 sign memory: chat signers (the Grunq viewer posts
+// kind 1311 per message) would otherwise reopen an approval window for
+// every single message. 'always' in the sign dialog persists the kind
+// for this origin; other kinds keep asking.
+async function canSignKind(origin, kind) {
+  const perms = (await getStore(STORE.PERMISSIONS)) ?? {};
+  const kinds = perms[origin]?.sign_kinds;
+  return Array.isArray(kinds) && kinds.includes(Number(kind));
+}
+
+async function rememberSignKind(origin, kind) {
+  const perms = (await getStore(STORE.PERMISSIONS)) ?? {};
+  const entry = perms[origin] ?? {};
+  const kinds = Array.isArray(entry.sign_kinds) ? entry.sign_kinds : [];
+  if (!kinds.includes(Number(kind))) kinds.push(Number(kind));
+  perms[origin] = { ...entry, sign_kinds: kinds };
+  await setStore(STORE.PERMISSIONS, perms);
+}
+
 // ---------- NIP-46 signer (bunker) ----------
 
 const signerCore = createSignerCore({
@@ -212,8 +231,14 @@ async function handleRpc(msg, sender) {
       await requireOriginPermission(origin);
       const event = params?.event;
       if (!event || typeof event !== 'object') throw err('invalid_input');
-      const decision = await requestApproval({ kind: 'sign-event', origin, event });
-      if (decision !== 'allow') throw err('denied');
+      if (!(await canSignKind(origin, event.kind))) {
+        const decision = await requestApproval({ kind: 'sign-event', origin, event });
+        if (decision === 'always') {
+          await rememberSignKind(origin, event.kind);
+        } else if (decision !== 'allow') {
+          throw err('denied');
+        }
+      }
       const { privHex } = await getStore(STORE.KEY);
       // NIP-07: resolve with the signed event object directly.
       return finalizeEvent(privHex, event);
@@ -314,7 +339,7 @@ async function handlePopup(msg) {
           : null,
         approvals: Object.entries(perms)
           .filter(([, v]) => v?.nip07)
-          .map(([origin, v]) => ({ origin, ts: v.ts })),
+          .map(([origin, v]) => ({ origin, ts: v.ts, signKinds: Array.isArray(v?.sign_kinds) ? v.sign_kinds : [] })),
         sessions,
         relays: relays.relays,
       };
