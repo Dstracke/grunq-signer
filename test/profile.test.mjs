@@ -8,6 +8,7 @@ import {
   PROFILE_STORE,
   PROFILE_FIELDS,
   createProfileService,
+  planRepublish,
   sanitizeProfile,
 } from '../src/signer/profile.js';
 import { derivePubkeyHex, finalizeEvent, randomIdentity } from '../src/lib/keys.js';
@@ -156,6 +157,25 @@ test('profile: delete publishes NIP-09 with e and a tags and clears the store', 
   assert.deepEqual(del.tags, [['e', eventId], ['a', `0:${me}:`]]);
   assert.equal(storage.map.get(PROFILE_STORE).eventId, null);
   assert.deepEqual(storage.map.get(PROFILE_STORE).fields, {});
+});
+
+test('profile: planRepublish names only the relays missing the profile', () => {
+  const local = { fields: { name: 'luku' }, publishedAt: 1_700_000_000_000 };
+  const perRelay = [
+    { relay: 'wss://a', present: true },
+    { relay: 'wss://b', present: false },
+    { relay: 'wss://c', present: false },
+  ];
+  assert.deepEqual(planRepublish(local, perRelay), ['wss://b', 'wss://c']);
+  // Nothing to repair when the local side never published.
+  assert.deepEqual(planRepublish({ fields: { name: 'x' }, publishedAt: null }, perRelay), []);
+  assert.deepEqual(planRepublish({ fields: {}, publishedAt: 1 }, perRelay), []);
+  assert.deepEqual(planRepublish(local, []), []);
+  // Everything present -> nothing to do.
+  assert.deepEqual(
+    planRepublish(local, perRelay.map((r) => ({ ...r, present: true }))),
+    [],
+  );
 });
 
 test('profile: delete without a published profile is refused', async () => {

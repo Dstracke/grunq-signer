@@ -192,6 +192,20 @@
   "btnFetchProfile": {
     "message": "Load from relays"
   },
+  "btnProfileCheck": {
+    "message": "Check relays"
+  },
+  "profileCheckOk": {
+    "message": "Profile present on all relays."
+  },
+  "profileCheckRepaired": {
+    "message": "Republished on $COUNT$ relay(s).",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
   "btnDeleteProfile": {
     "message": "Delete profile"
   },

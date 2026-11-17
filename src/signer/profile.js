@@ -34,6 +34,20 @@ function fail(code, message) {
   return e;
 }
 
+/**
+ * Which relays still need the profile? Used by the start-up repair pull: a
+ * relay that answered with a profile is left alone, every relay without one
+ * gets the local profile republished. Never touches relays when the local
+ * side has nothing published yet.
+ */
+export function planRepublish(local, perRelay) {
+  if (!local || !local.publishedAt) return [];
+  const fields = local.fields ?? {};
+  if (Object.keys(fields).length === 0) return [];
+  if (!Array.isArray(perRelay)) return [];
+  return perRelay.filter((r) => r && r.relay && !r.present).map((r) => r.relay);
+}
+
 export function createProfileService(env) {
   const {
     storage, // { get(key), set(key, value) }

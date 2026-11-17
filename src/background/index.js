@@ -16,7 +16,7 @@ import {
   SETTINGS_STORE,
 } from '../signer/core.js';
 import { createKeystore } from '../signer/keystore.js';
-import { createProfileService } from '../signer/profile.js';
+import { createProfileService, planRepublish } from '../signer/profile.js';
 import { createAuditLog } from '../signer/audit.js';
 
 const api = globalThis.browser ?? globalThis.chrome;
@@ -120,6 +120,13 @@ const auditLog = createAuditLog({ storage: { get: getStore, set: setStore } });
 // getPublicKey, that would only add noise).
 const NIP07_AUDIT = new Set(['signEvent', 'nip04.decrypt', 'nip44.decrypt']);
 
+// Start-up profile repair: once per browser run (at most once an hour), ask
+// every relay whether it has our kind 0 and republish the local profile to the
+// ones that lost it. Never publishes when nothing was published locally.
+const PROFILE_CHECK_STORE = 'grunq_signer:profilecheck';
+const PROFILE_CHECK_MIN_MS = 60 * 60 * 1000;
+let profileCheckScheduled = false;
+
 const profileService = createProfileService({
   storage: { get: getStore, set: setStore },
   transport: profileTransport,
@@ -128,6 +135,40 @@ const profileService = createProfileService({
 
 function signDraft(draft) {
   return keystore.privateKeyHex().then((privHex) => finalizeEvent(privHex, draft));
+}
+
+async function republishProfileIfMissing(options = {}) {
+  const status = await keystore.status();
+  if (!status.hasKey || (status.encrypted && !status.unlocked)) return [];
+  const local = await profileService.load();
+  if (!local.publishedAt || !local.fields || Object.keys(local.fields).length === 0) return [];
+  const marker = await sessionStore.get(PROFILE_CHECK_STORE);
+  if (!options.force && marker?.checkedAt && Date.now() - marker.checkedAt < PROFILE_CHECK_MIN_MS) return [];
+  const pubkey = await keystore.pubkeyHex();
+  const { relays } = await signerCore.getRelaySettings();
+  if (!pubkey || relays.length === 0) return [];
+  // One fetch per relay: only the relays that actually lost the profile are
+  // republished (a single merged fetch could not tell them apart).
+  const perRelay = await Promise.all(
+    relays.map(async (relay) => ({
+      relay,
+      present: !!(await profileService
+        .fetchLatest(pubkey, [relay], { graceMs: 500, timeoutMs: 5000 })
+        .catch(() => null)),
+    })),
+  );
+  await sessionStore.set(PROFILE_CHECK_STORE, { checkedAt: Date.now() });
+  const missing = planRepublish(local, perRelay);
+  if (missing.length === 0) return [];
+  await profileService.publish(local.fields, missing, signDraft);
+  console.log('[profile] re-published on', missing.length, 'relay(s):', missing.join(', '));
+  return missing;
+}
+
+function scheduleProfileRepublish() {
+  if (profileCheckScheduled) return;
+  profileCheckScheduled = true;
+  republishProfileIfMissing().catch((e) => console.log('[profile] republish failed', e));
 }
 
 // ---------- approval windows ----------
@@ -233,10 +274,12 @@ async function bootSigner() {
   const status = await keystore.status();
   if (!status.hasKey || !status.unlocked) return;
   signerBooted = true;
-  await signerCore.start().catch((e) => {
+  const ok = await signerCore.start().then(() => true).catch((e) => {
     console.log('[nip46] start failed', e);
     signerBooted = false;
+    return false;
   });
+  if (ok) scheduleProfileRepublish();
 }
 
 async function stopSigner() {
@@ -594,6 +637,12 @@ async function handlePopup(msg) {
       perms[origin] = { ...perms[origin], sign_kinds: kinds };
       await setStore(STORE.PERMISSIONS, perms);
       return { ok: true, signKinds: kinds };
+    }
+
+    // Manual repair pull ("check relays") for the options page.
+    case 'profile.check': {
+      const missing = await republishProfileIfMissing({ force: true });
+      return { missing };
     }
 
     case 'profile.delete': {

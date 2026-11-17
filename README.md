@@ -31,10 +31,11 @@ an identity onto a phone. **Passphrase protection (NIP-49) and auto-lock
 are implemented**: the popup encrypts the key with a passphrase
 (`ncryptsec`), keeps only the session key in memory, locks automatically
 after the configured idle time and exports the `ncryptsec` as a backup QR.
-The **options page** (extension settings, gear/"Settings" in the popup) holds
-the profile editor, the relay list, site approvals with per-kind revoke,
-bunker sessions and an **audit log** of the last answered requests. Still
-open from M3: re-publishing the profile on start.
+The **options page** (extension settings, "Settings" in the popup) holds the
+profile editor, the relay list, site approvals with per-kind revoke, bunker
+sessions and an **audit log** of the last answered requests. The profile is
+**re-published on start** to relays that lost it ("Check relays" forces the
+repair).
 
 The full specification lives in
 [`docs/browser-extension-spec.md`](docs/browser-extension-spec.md)
@@ -127,7 +128,9 @@ fields are saved locally first, so a relay problem never loses your input.
 **Load from relays** pulls the newest own profile back (works while locked —
 reading needs no key), **Delete profile** sends a NIP-09 request with `e` and
 `a` tags and clears the local copy. Publishing and deleting need an unlocked
-identity.
+identity. After a browser start the extension checks each relay once (at most
+hourly) and republishes the local profile only where it is missing —
+**Check relays** runs that repair on demand.
 
 ### Passphrase protection and auto-lock
 

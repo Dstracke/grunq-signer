@@ -128,6 +128,20 @@ el('btn-profile-fetch').addEventListener('click', async () => {
   }
 });
 
+el('btn-profile-check').addEventListener('click', async () => {
+  show(el('profile-error'), false);
+  show(el('profile-status'), false);
+  try {
+    const res = await send({ action: 'profile.check' });
+    const count = Array.isArray(res.missing) ? res.missing.length : 0;
+    flash(el('profile-status'), count
+      ? t('profileCheckRepaired', [String(count)])
+      : t('profileCheckOk'));
+  } catch (e) {
+    showError(el('profile-error'), e);
+  }
+});
+
 el('btn-profile-delete').addEventListener('click', async () => {
   show(el('profile-error'), false);
   show(el('profile-status'), false);

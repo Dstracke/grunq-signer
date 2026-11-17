@@ -191,6 +191,20 @@
   "btnFetchProfile": {
     "message": "Von Relays laden"
   },
+  "btnProfileCheck": {
+    "message": "Relays prüfen"
+  },
+  "profileCheckOk": {
+    "message": "Profil ist auf allen Relays vorhanden."
+  },
+  "profileCheckRepaired": {
+    "message": "Auf $COUNT$ Relay(s) neu veröffentlicht.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
   "btnDeleteProfile": {
     "message": "Profil löschen"
   },

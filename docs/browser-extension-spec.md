@@ -333,9 +333,14 @@ grunq_signer:audit         [ { ts, scope: 'nip46'|'nip07', method,
   langsamer Relays). Löschen schickt NIP-09 mit `e` (letzte Event-ID) und
   `a` (`0:<pubkey>:`). Veröffentlichen/Löschen brauchen ein entsperrtes
   Store. One-Shot-Relay-Pools pro Aktion, damit keine Sockets und
-  Reconnect-Timer zwischen Popup-Aktionen weiterlaufen. Nachveröffentlichen
-  beim Start (Spec oben) ist noch offen — der lokale Stand bleibt sichtbar,
-  ein fehlendes Relay-Profil merkt man erst beim Laden.
+  Reconnect-Timer zwischen Popup-Aktionen weiterlaufen. **Nachveröffentlichung
+  beim Start (umgesetzt):** Sobald der Signer läuft (also nach dem
+  Entsperren), fragt die Extension je Relay einzeln nach dem eigenen
+  Kind 0 und veröffentlicht den lokalen Stand nur auf den Relays, die ihn
+  nicht (mehr) haben (`planRepublish`, `profile.check` als manueller
+  Knopf „Relays prüfen"). Gedrosselt auf einmal pro Browser-Sitzung bzw.
+  einmal pro Stunde (`storage.session`-Marker), kein Publish, solange
+  lokal nie veröffentlicht wurde.
 - **Grenze (bewusst):** Gespeichert wird ausschließlich der öffentliche
   Kind-0-Event — nichts, was nicht ohnehin öffentlich wäre. Keine Keys,
   kein Chat, keine Kontakte, keine Telemetrie, kein Account; Löschen per
@@ -398,8 +403,9 @@ laufen unverändert im Knoten, siehe auch GQ-03.)
   Options-Seite sind umgesetzt (Tests: `test/nip49.test.mjs` gegen den
   NIP-49-Vektor, `test/keystore.test.mjs` für Sperren/Entsperren/Idle,
   `test/profile.test.mjs` für Publish/Fetch/NIP-09,
-  `test/audit.test.mjs` für das Log). Offen: Nachveröffentlichung des
-  Profils beim Start.
+  `test/audit.test.mjs` für das Log, `planRepublish` in
+  `test/profile.test.mjs`). M3 ist damit bis auf die Options-Seiten-
+  Deep-Links abgeschlossen.
 - **M4 (optional):** Multi-Identity (Streamer-/Chat-Identität getrennt),
   NIP-26-Delegation, Web-NWC (`nostr+walletconnect`) als Client-Rolle.
 
