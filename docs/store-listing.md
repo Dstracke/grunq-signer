@@ -76,7 +76,13 @@ these as-is), English UI, no user data:
 | `store/screenshots/05-audit-log.png` | Audit log with allowed/denied requests |
 
 They were rendered from the real built UI (stubbed background data, no
-secrets). Regenerate after UI changes with the same 1280×800 viewport.
+secrets). A German set with the same five shots lives in
+`store/screenshots/de/`. Regenerate after UI changes with the same 1280×800
+viewport.
+
+The step-by-step submission (fields, reviewer notes, permission
+justifications, release notes) is in
+[`release-1.0.0.md`](release-1.0.0.md).
 
 ## Before submitting – manual end-to-end check with the Grunq node
 
