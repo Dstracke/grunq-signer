@@ -394,6 +394,63 @@ for (const id of [
   });
 }
 
+// ---------- NIP-05 claim for grunq.com ----------
+
+let claimMailto = '';
+
+el('btn-claim-nip05').addEventListener('click', async () => {
+  const box = el('claim-box');
+  const status = el('claim-status');
+  const text = el('claim-text');
+  show(box, true);
+  status.className = 'hint check-result';
+  const name = (el('pf-name').value || '').trim().toLowerCase();
+  if (!/^[a-z0-9][a-z0-9_-]{1,29}$/.test(name)) {
+    text.value = '';
+    status.textContent = t('claimNameNeeded');
+    status.className = 'hint check-result bad';
+    return;
+  }
+  const address = `${name}@grunq.com`;
+  status.textContent = t('checkRunning');
+  try {
+    const check = await send({ action: 'profile.check-nip05', address, force: true });
+    if (check.ok && check.verified) {
+      el('pf-nip05').value = address;
+      renderPreview();
+      text.value = '';
+      status.textContent = t('claimAlreadyYours', [address]);
+      status.className = 'hint check-result ok';
+      return;
+    }
+    if (check.ok && check.reason === 'mismatch') {
+      text.value = '';
+      status.textContent = t('claimTaken', [address]);
+      status.className = 'hint check-result bad';
+      return;
+    }
+    const claim = await send({ action: 'profile.claim-nip05', name });
+    claimMailto = claim.mailto;
+    text.value = claim.text;
+    status.textContent = t('claimReady', [address]);
+    status.className = 'hint check-result ok';
+  } catch (e) {
+    text.value = '';
+    status.textContent = e?.message ?? String(e);
+    status.className = 'hint check-result bad';
+  }
+});
+
+el('btn-claim-mail').addEventListener('click', () => {
+  if (claimMailto) window.location.href = claimMailto;
+});
+
+el('btn-claim-copy').addEventListener('click', async () => {
+  if (!el('claim-text').value) return;
+  await navigator.clipboard.writeText(el('claim-text').value);
+  flash(el('claim-status'), t('claimCopied'));
+});
+
 // ---------- on-demand checks ----------
 
 el('btn-check-nip05').addEventListener('click', async () => {

@@ -383,9 +383,17 @@ grunq_signer:audit         [ { ts, scope: 'nip46'|'nip07', method,
   NIP-09 auf das Profil-Event. Ein verschlüsselter Abgleich von
   Einstellungen/Sessions mit dem Grunq-Server wäre eine Cloud-Pflicht
   und ist bewusst Non-Goal (Grundsatz: keine zentralen Nutzerdatenbanken).
-- **NIP-05 (offen):** GQ-01 sieht `name@grunq.com`-Adressen vor; wie eine
-  Claim-Flow für Extension-Nutzer aussieht (ohne Account), bleibt
-  offene Frage (§11).
+- **NIP-05-Claim (umgesetzt, 17.11.2026):** Die Extension prüft unter
+  *Profil → „name@grunq.com anfragen"* zuerst, ob der Name frei ist
+  (bestehender Check gegen `/.well-known/nostr.json`), und signiert dann
+  `grunq-nip05-claim:<name>:<pubkey-hex>:<issuedAt>` mit der Identität
+  (`src/signer/claim.js`, Schnorr über SHA-256). Die fertige Anfrage geht
+  per `mailto:` an `contact@grunq.com` (Text auch kopierbar). Der Betreiber
+  verifiziert mit `tools/nip05-claim.mjs` (Signatur + max. 7 Tage alt,
+  Namen fremder Keys werden verweigert) und trägt den Eintrag atomar in
+  `deploy/landing/.well-known/nostr.json` ein; Ablauf und Regeln stehen in
+  `grunq/deploy/nip05/README.md`. Kein Account, keine Datenbank – die
+  Signatur ist der Nachweis.
 
 ## 9. Grunq-Integration
 

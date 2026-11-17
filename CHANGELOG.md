@@ -39,6 +39,10 @@ First public release. A browser extension that is both a NIP-07 provider
   range, zap support), NIP-05 fetches `.well-known/nostr.json` and compares
   the published key with the identity. Both are https-only, size/time-limited
   and never run in the background.
+- **NIP-05 claim for grunq.com**: the profile card checks name availability,
+  signs a claim with the identity and prepares an e-mail to the operator;
+  `tools/nip05-claim.mjs` verifies the signature (max. 7 days old, refuses
+  names of other keys) and updates `nostr.json` atomically.
 - **QR export** of npub (public) and nsec (behind an explicit two-step
   confirmation) to move an identity to a phone.
 - **Encrypted backup**: all identities (labels + keys) and their profiles in

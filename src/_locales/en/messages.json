@@ -198,6 +198,48 @@
   "btnCheck": {
     "message": "Check"
   },
+  "btnClaimNip05": {
+    "message": "Claim name@grunq.com"
+  },
+  "claimNameNeeded": {
+    "message": "Enter a name first (2–30 characters: a-z, 0–9, - and _)."
+  },
+  "claimAlreadyYours": {
+    "message": "$ADDRESS$ already points to this identity.",
+    "placeholders": {
+      "address": {
+        "content": "$1"
+      }
+    }
+  },
+  "claimTaken": {
+    "message": "$ADDRESS$ is already taken by another key.",
+    "placeholders": {
+      "address": {
+        "content": "$1"
+      }
+    }
+  },
+  "claimReady": {
+    "message": "Claim prepared for $ADDRESS$. Send it to contact@grunq.com — the signature proves the key, the operator adds the name.",
+    "placeholders": {
+      "address": {
+        "content": "$1"
+      }
+    }
+  },
+  "claimOpenMail": {
+    "message": "Open email"
+  },
+  "claimCopy": {
+    "message": "Copy claim"
+  },
+  "claimCopied": {
+    "message": "Claim copied."
+  },
+  "errorInvalidName": {
+    "message": "Invalid name (2–30 characters: a-z, 0–9, - and _)."
+  },
   "checkRunning": {
     "message": "Checking…"
   },

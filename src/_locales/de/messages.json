@@ -197,6 +197,48 @@
   "btnCheck": {
     "message": "Prüfen"
   },
+  "btnClaimNip05": {
+    "message": "name@grunq.com anfragen"
+  },
+  "claimNameNeeded": {
+    "message": "Trage zuerst einen Namen ein (2–30 Zeichen: a-z, 0–9, - und _)."
+  },
+  "claimAlreadyYours": {
+    "message": "$ADDRESS$ zeigt bereits auf diese Identität.",
+    "placeholders": {
+      "address": {
+        "content": "$1"
+      }
+    }
+  },
+  "claimTaken": {
+    "message": "$ADDRESS$ gehört bereits einem anderen Schlüssel.",
+    "placeholders": {
+      "address": {
+        "content": "$1"
+      }
+    }
+  },
+  "claimReady": {
+    "message": "Anfrage für $ADDRESS$ vorbereitet. Schicke sie an contact@grunq.com – die Signatur weist den Schlüssel aus, der Betreiber trägt den Namen ein.",
+    "placeholders": {
+      "address": {
+        "content": "$1"
+      }
+    }
+  },
+  "claimOpenMail": {
+    "message": "E-Mail öffnen"
+  },
+  "claimCopy": {
+    "message": "Anfrage kopieren"
+  },
+  "claimCopied": {
+    "message": "Anfrage kopiert."
+  },
+  "errorInvalidName": {
+    "message": "Ungültiger Name (2–30 Zeichen: a-z, 0–9, - und _)."
+  },
   "checkRunning": {
     "message": "Wird geprüft…"
   },

@@ -164,6 +164,26 @@ test('background: encrypted backup export and import', async () => {
   assert.equal(wrong.error?.code, 'wrong_password');
 });
 
+test('background: NIP-05 claim is signed and verifiable', async () => {
+  const res = await call({ action: 'profile.claim-nip05', name: 'luku' });
+  assert.equal(res.name, 'luku');
+  assert.match(res.npub, /^npub1/);
+  assert.match(res.signature, /^[0-9a-f]{128}$/);
+  const { verifyClaim } = await import('../src/signer/claim.js');
+  assert.deepEqual(
+    verifyClaim({
+      pubkey: res.pubkey,
+      name: 'luku',
+      issuedAt: res.issuedAt,
+      signature: res.signature,
+    }),
+    { ok: true },
+  );
+  assert.match(res.mailto, /^mailto:contact@grunq\.com\?/);
+  const bad = await call({ action: 'profile.claim-nip05', name: 'Bad Name' });
+  assert.equal(bad.error?.code, 'invalid_name');
+});
+
 test('background: removing the active identity falls back, audit handlers answer', async () => {
   const list = await call({ action: 'identity.list' });
   const chat = list.find((i) => i.label === 'Chat');

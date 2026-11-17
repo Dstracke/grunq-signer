@@ -18,7 +18,7 @@ npm run package   # -> web-ext-artifacts/grunq_signer-1.0.0.zip
 |---|---|
 | Datei | `web-ext-artifacts/grunq_signer-1.0.0.zip` |
 | Größe | 164 KB (30 Dateien, `manifest.json` im ZIP-Root) |
-| SHA-256 | `a58f3fbfcc0b777cf4d58cb92792d79743311215a306dcfcb1c8cdaf8c8ae6a9` |
+| SHA-256 | `5e5e0be1821461fa61b40e0ea782e577e724da65b9ff03d39a26173aa52f872b` |
 | Add-on-ID | `signer@grunq.com` |
 | Lizenz | AGPL-3.0 |
 | Datenschutz | https://grunq.com/grunq-signer/privacy.html (DE: `/datenschutz.html`) |
@@ -120,7 +120,7 @@ Alle 1280×800, englischer Satz in `store/screenshots/`, deutscher Satz in
 First public release: NIP-07 provider (window.nostr) and NIP-46 signer
 (bunker), NIP-49 passphrase protection with auto-lock, multiple identities
 with an encrypted backup file, public profile editor (including banner,
-website, NIP-05/lightning checks and live preview), QR identity export,
+website, NIP-05/lightning checks, NIP-05 claim requests and live preview), QR identity export,
 multi-device warning and an audit log. English/German UI follows the browser
 language.
 ```
@@ -144,3 +144,6 @@ language.
   beides erwartbar, keine Fehler.
 - **NIP-46-Live-Test** mit dem Grunq-Knoten vor dem Einreichen einmal
   durchklicken – Checkliste in `docs/store-listing.md`.
+- **NIP-05-Claim** ist rein optional und braucht den Betreiber: Anfrage aus
+  dem Profil-Editor → `contact@grunq.com` → `tools/nip05-claim.mjs`
+  (Ablauf: `grunq/deploy/nip05/README.md`).

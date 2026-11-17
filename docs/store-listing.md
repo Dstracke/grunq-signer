@@ -48,7 +48,8 @@ WHAT IT DOES
 • Public profile (kind 0) editor: name, display name, about, picture,
   banner, website, NIP-05, lightning address and bot flag, with a live
   preview and on-demand checks of the NIP-05 address and the lightning
-  address; published to your relays.
+  address; published to your relays. NIP-05 names on grunq.com can be
+  requested right from the editor (signed claim, no account).
 • Encrypted backup of all identities in one passphrase-protected file, and a
   warning when the same client name is connected twice (two devices).
 • Identity export as QR codes (npub openly, nsec only after an explicit

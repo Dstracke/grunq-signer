@@ -19,6 +19,7 @@ import {
 import { createKeystore, profileKey, sessionsKey } from '../signer/keystore.js';
 import { createProfileService, PROFILE_STORE, planRepublish } from '../signer/profile.js';
 import { createProfileChecks } from '../signer/profilechecks.js';
+import { CLAIM_NAME_RE, signClaim } from '../signer/claim.js';
 import { createAuditLog } from '../signer/audit.js';
 import { createRateLimiter } from '../lib/ratelimit.js';
 
@@ -44,6 +45,7 @@ function err(code) {
     rate_limited: 'errorRateLimited',
     invalid_backup: 'errorInvalidBackup',
     invalid_url: 'errorInvalidUrl',
+    invalid_name: 'errorInvalidName',
     invalid_input: 'errorInvalidInput',
     no_permission: 'errorNoPermission',
     internal: 'errorInternal',
@@ -518,6 +520,7 @@ async function handleWebNostrConnect(msg, sender) {
         rate_limited: 'errorRateLimited',
     invalid_backup: 'errorInvalidBackup',
     invalid_url: 'errorInvalidUrl',
+    invalid_name: 'errorInvalidName',
         invalid_request: 'errorInvalidInput',
       };
       throw { code: e.nip46Code, message: t(map[e.nip46Code] ?? 'errorInternal') };
@@ -538,6 +541,7 @@ function popupError(e) {
       rate_limited: 'errorRateLimited',
     invalid_backup: 'errorInvalidBackup',
     invalid_url: 'errorInvalidUrl',
+    invalid_name: 'errorInvalidName',
       session_limit: 'nip46ErrorSessionLimit',
       no_relays: 'nip46ErrorNoRelays',
       unauthorized: 'nip46ErrorDenied',
@@ -773,6 +777,47 @@ async function handlePopup(msg) {
       perms[origin] = { ...perms[origin], sign_kinds: kinds };
       await setStore(STORE.PERMISSIONS, perms);
       return { ok: true, signKinds: kinds };
+    }
+
+    // NIP-05 claim for a grunq.com name: sign the claim locally so the
+    // operator can verify it without any account or database.
+    case 'profile.claim-nip05': {
+      const name = String(msg.name ?? '').trim().toLowerCase();
+      if (!CLAIM_NAME_RE.test(name)) throw err('invalid_name');
+      const status = await keystore.status();
+      if (!status.hasKey) throw err('no_key');
+      if (status.encrypted && !status.unlocked) throw err('locked');
+      const privHex = await keystore.privateKeyHex();
+      const pubkey = derivePubkeyHex(privHex);
+      const issuedAt = new Date().toISOString();
+      const signed = signClaim({ privHex, name, pubkey, issuedAt });
+      const npub = encodeNpub(pubkey);
+      const text = [
+        'NIP-05 claim for grunq.com',
+        '',
+        `Name: ${name}`,
+        `npub: ${npub}`,
+        `pubkey: ${pubkey}`,
+        `issued: ${issuedAt}`,
+        `signature: ${signed.signature}`,
+        '',
+        'Verify and add with:',
+        `node tools/nip05-claim.mjs apply --file <grunq>/deploy/landing/.well-known/nostr.json --name ${name} --npub ${npub} --issued ${issuedAt} --signature ${signed.signature}`,
+      ].join('\n');
+      await keystore.touch();
+      return {
+        name,
+        npub,
+        pubkey,
+        issuedAt,
+        signature: signed.signature,
+        text,
+        mailto:
+          `mailto:contact@grunq.com?subject=` +
+          encodeURIComponent(`NIP-05 claim: ${name}@grunq.com`) +
+          '&body=' +
+          encodeURIComponent(text),
+      };
     }
 
     // On-demand verification of the human-readable profile fields.

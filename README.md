@@ -112,6 +112,16 @@ Every incoming `sign_event` opens a confirmation dialog showing the
 connecting client and the event preview. Background wake-ups reconnect the
 relay subscriptions automatically (keepalive alarm, one minute).
 
+### NIP-05 names on grunq.com
+
+The profile card has **Claim name@grunq.com**: it checks whether the `name`
+field is still free, signs a claim with the identity
+(`grunq-nip05-claim:<name>:<pubkey>:<time>`) and opens an e-mail to
+contact@grunq.com. The operator verifies the signature with
+`tools/nip05-claim.mjs` and adds the name to
+`grunq.com/.well-known/nostr.json`; no account or database is involved.
+Afterwards the **Check** button next to the NIP-05 field confirms the entry.
+
 ### Moving an identity with the QR codes
 
 The identity card has a **QR code / export** button: it shows the npub as a
