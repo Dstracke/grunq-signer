@@ -62,10 +62,6 @@ async function refresh() {
     const list = el('approvals');
     list.textContent = '';
     show(el('no-approvals'), state.approvals.length === 0);
-    // prefill the relays editor once
-    if (!el('relays-input').value.trim()) {
-      el('relays-input').value = state.relays.join('\n');
-    }
     for (const a of state.approvals) {
       const li = document.createElement('li');
       const origin = document.createElement('span');
@@ -104,115 +100,8 @@ async function refresh() {
       sessions.append(li);
     }
     renderSecurity(state);
-    await refreshProfile();
   }
 }
-
-// ---------- public profile (kind 0) ----------
-
-let profileData = { fields: {}, eventId: null, publishedAt: null };
-
-async function refreshProfile() {
-  try {
-    profileData = await send({ action: 'profile.get' });
-  } catch {
-    profileData = { fields: {}, eventId: null, publishedAt: null };
-  }
-  renderProfile();
-}
-
-function renderProfile() {
-  const fields = profileData.fields ?? {};
-  const parts = [];
-  const label = fields.display_name || fields.name;
-  if (label) parts.push(label);
-  if (fields.nip05) parts.push(fields.nip05);
-  el('profile-state').textContent = parts.length ? parts.join(' · ') : t('profileNone');
-  // Never overwrite what the user is typing; sync only while collapsed.
-  if (el('profile-form').hidden) fillProfileForm(fields);
-}
-
-function fillProfileForm(fields) {
-  el('pf-name').value = fields.name ?? '';
-  el('pf-display-name').value = fields.display_name ?? '';
-  el('pf-about').value = fields.about ?? '';
-  el('pf-picture').value = fields.picture ?? '';
-  el('pf-nip05').value = fields.nip05 ?? '';
-  el('pf-lud16').value = fields.lud16 ?? '';
-}
-
-function readProfileForm() {
-  return {
-    name: el('pf-name').value,
-    display_name: el('pf-display-name').value,
-    about: el('pf-about').value,
-    picture: el('pf-picture').value,
-    nip05: el('pf-nip05').value,
-    lud16: el('pf-lud16').value,
-  };
-}
-
-function profileError(e) {
-  const errEl = el('profile-error');
-  errEl.textContent = e?.message?.replace(/^Error: /, '') || String(e);
-  show(errEl, true);
-}
-
-el('btn-profile-edit').addEventListener('click', () => {
-  const form = el('profile-form');
-  const open = form.hidden;
-  show(form, open);
-  el('btn-profile-edit').textContent = open ? t('btnClose') : t('btnEdit');
-  if (open) {
-    fillProfileForm(profileData.fields ?? {});
-    show(el('profile-status'), false);
-    show(el('profile-error'), false);
-  }
-});
-
-el('btn-profile-publish').addEventListener('click', async () => {
-  const status = el('profile-status');
-  show(el('profile-error'), false);
-  show(status, false);
-  try {
-    const res = await send({ action: 'profile.publish', fields: readProfileForm() });
-    await refreshProfile();
-    status.textContent = t('profilePublished', [String(res.relays?.length ?? 0)]);
-    show(status, true);
-  } catch (e) {
-    profileError(e);
-  }
-});
-
-el('btn-profile-fetch').addEventListener('click', async () => {
-  const status = el('profile-status');
-  show(el('profile-error'), false);
-  show(status, false);
-  try {
-    const res = await send({ action: 'profile.fetch' });
-    fillProfileForm(res.fields ?? {});
-    status.textContent = t('profileFetched');
-    show(status, true);
-  } catch (e) {
-    profileError(e);
-  }
-});
-
-el('btn-profile-delete').addEventListener('click', async () => {
-  const status = el('profile-status');
-  show(el('profile-error'), false);
-  show(status, false);
-  if (!confirm(t('confirmProfileDelete'))) return;
-  try {
-    await send({ action: 'profile.delete' });
-    fillProfileForm({});
-    await refreshProfile();
-    status.textContent = t('profileDeleted');
-    show(status, true);
-  } catch (e) {
-    profileError(e);
-  }
-});
 
 // ---------- security card (passphrase + auto-lock) ----------
 
@@ -492,22 +381,9 @@ el('btn-invite-copy').addEventListener('click', async () => {
   setTimeout(() => (el('btn-invite-copy').textContent = t('btnCopyUri')), 1500);
 });
 
-el('btn-relays-save').addEventListener('click', async () => {
-  const status = el('relays-status');
-  try {
-    const relays = el('relays-input').value
-      .split(/\r?\n/)
-      .map((l) => l.trim())
-      .filter(Boolean);
-    const res = await send({ action: 'nip46.relays.set', relays });
-    el('relays-input').value = res.relays.join('\n');
-    status.textContent = t('relaysSaved');
-    show(status, true);
-    setTimeout(() => show(status, false), 2000);
-  } catch (e) {
-    status.textContent = tOr(e?.message?.replace(/^Error: /, ''), '');
-    show(status, true);
-  }
+el('btn-options').addEventListener('click', () => {
+  if (api.runtime.openOptionsPage) api.runtime.openOptionsPage();
+  else api.tabs?.create?.({ url: api.runtime.getURL('options/options.html') });
 });
 
 initI18n();

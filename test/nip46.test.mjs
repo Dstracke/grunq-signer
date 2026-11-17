@@ -46,6 +46,7 @@ function fakeEnv(overrides = {}) {
     requestApproval: overrides.requestApproval ?? (async () => 'allow'),
     now: () => overrides.now?.() ?? Date.now(),
     signerPrivHex: async () => priv,
+    onAudit: overrides.onAudit,
     log: () => {},
   };
   env.priv = priv;
@@ -241,6 +242,41 @@ test('core: kind-scoped sign_event perm covers only the granted kind', async () 
   assert.equal(JSON.parse(resp.result).kind, 1);
   assert.equal(approvals.length, 1, 'foreign kinds still ask');
   assert.equal(approvals[0].event.kind, 1);
+});
+
+test('core: every answered request produces an audit entry', async () => {
+  const audit = [];
+  let decision = 'allow';
+  const env = fakeEnv({
+    onAudit: (entry) => audit.push(entry),
+    // The core captures requestApproval at construction, so flip the shared
+    // decision instead of replacing the function later.
+    requestApproval: async () => decision,
+  });
+  const core = createSignerCore(env);
+  await core.start();
+  const invite = await core.createInvite();
+  const client = makeClient();
+  await requestViaCore(env, core, client, 'connect', [env.pub, invite.secret, '', '{"name":"MiniClient"}']);
+  await requestViaCore(env, core, client, 'get_public_key', []);
+  await requestViaCore(env, core, client, 'sign_event', [
+    JSON.stringify({ kind: 1311, content: 'chat', created_at: 1, tags: [] }),
+  ]);
+  // A denied signature must be audited with its error code.
+  decision = 'deny';
+  await requestViaCore(env, core, client, 'sign_event', [
+    JSON.stringify({ kind: 1, content: 'nope', created_at: 1, tags: [] }),
+  ]);
+
+  assert.deepEqual(audit.map((e) => e.method), ['connect', 'get_public_key', 'sign_event', 'sign_event']);
+  assert.ok(audit.every((e) => e.scope === 'nip46'));
+  assert.ok(audit.every((e) => e.clientPub === client.pub), 'client pubkey recorded');
+  assert.equal(audit[0].ok, true);
+  assert.equal(audit[2].kind, 1311);
+  assert.equal(audit[3].ok, false);
+  assert.equal(audit[3].code, 'unauthorized');
+  assert.equal(audit[3].kind, 1);
+  assert.equal(audit[2].clientName, 'MiniClient', 'connect resolves the client name');
 });
 
 test('core: "always" decision stores a per-kind sign permission', async () => {

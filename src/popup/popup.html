@@ -9,6 +9,7 @@
   <header>
     <img class="logo" src="../icons/grunq-32.png" alt="Grunq" width="26" height="26">
     <h1>Grunq Signer</h1>
+    <button id="btn-options" class="mini" data-i18n="btnSettings"></button>
   </header>
 
   <main id="view-import" hidden>
@@ -73,38 +74,6 @@
           </div>
         </div>
         <p id="export-error" class="error" hidden></p>
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="card-head">
-        <h2 data-i18n="profileHeading"></h2>
-        <button id="btn-profile-edit" class="mini" data-i18n="btnEdit"></button>
-      </div>
-      <p id="profile-state" class="hint"></p>
-      <div id="profile-form" hidden>
-        <p class="hint" data-i18n="profilePublishHint"></p>
-        <label class="flabel" for="pf-name" data-i18n="profileName"></label>
-        <input id="pf-name" class="field" type="text" spellcheck="false">
-        <label class="flabel" for="pf-display-name" data-i18n="profileDisplayName"></label>
-        <input id="pf-display-name" class="field" type="text" spellcheck="false">
-        <label class="flabel" for="pf-about" data-i18n="profileAbout"></label>
-        <textarea id="pf-about" rows="3" spellcheck="false"></textarea>
-        <label class="flabel" for="pf-picture" data-i18n="profilePicture"></label>
-        <input id="pf-picture" class="field" type="url" spellcheck="false" placeholder="https://…">
-        <label class="flabel" for="pf-nip05" data-i18n="profileNip05"></label>
-        <input id="pf-nip05" class="field" type="text" spellcheck="false" placeholder="name@domain">
-        <label class="flabel" for="pf-lud16" data-i18n="profileLud16"></label>
-        <input id="pf-lud16" class="field" type="text" spellcheck="false" placeholder="name@wallet">
-        <div class="row">
-          <button id="btn-profile-publish" class="primary" data-i18n="btnPublishProfile"></button>
-          <button id="btn-profile-fetch" data-i18n="btnFetchProfile"></button>
-        </div>
-        <div class="row">
-          <button id="btn-profile-delete" class="danger" data-i18n="btnDeleteProfile"></button>
-        </div>
-        <p id="profile-status" class="hint" hidden></p>
-        <p id="profile-error" class="error" hidden></p>
       </div>
     </section>
 
@@ -189,16 +158,6 @@
       </div>
       <ul id="sessions" class="approvals"></ul>
       <p id="no-sessions" class="muted" data-i18n="noSessions"></p>
-    </section>
-
-    <section class="card">
-      <h2 data-i18n="relaysHeading"></h2>
-      <p class="hint" data-i18n="relaysHint"></p>
-      <textarea id="relays-input" class="mono" rows="3" spellcheck="false"></textarea>
-      <div class="row">
-        <button id="btn-relays-save" data-i18n="btnRelaysSave"></button>
-      </div>
-      <p id="relays-status" class="hint" hidden></p>
     </section>
 
     <p class="hint" data-i18n="popupHint"></p>

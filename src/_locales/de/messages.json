@@ -225,6 +225,83 @@
       }
     }
   },
+  "btnSettings": {
+    "message": "Einstellungen"
+  },
+  "optionsHint": {
+    "message": "Änderungen wirken sofort. Im Popup bleiben die Schnellaktionen: Entsperren, QR-Export und Bunker-Einladungen."
+  },
+  "optionsNoIdentity": {
+    "message": "Noch keine Identität eingerichtet. Öffne das Popup der Extension, um eine zu importieren oder zu erstellen."
+  },
+  "secBadgeEncrypted": {
+    "message": "verschlüsselt"
+  },
+  "secBadgeLocked": {
+    "message": "gesperrt"
+  },
+  "profilePublishedChip": {
+    "message": "veröffentlicht"
+  },
+  "profileDraftChip": {
+    "message": "nicht veröffentlicht"
+  },
+  "approvalsOptionsHint": {
+    "message": "Websites mit window.nostr-Zugriff. Ein gemerktes Kind entfernen heißt: dafür wird wieder gefragt. Die Website zu entfernen widerruft alles."
+  },
+  "permOnRequest": {
+    "message": "fragt jedes Mal"
+  },
+  "revokeKindTitle": {
+    "message": "Für Kind $KIND$ wieder fragen",
+    "placeholders": {
+      "kind": {
+        "content": "$1"
+      }
+    }
+  },
+  "btnRevokeOrigin": {
+    "message": "Website widerrufen"
+  },
+  "auditHeading": {
+    "message": "Audit-Log"
+  },
+  "auditHint": {
+    "message": "Die letzten Anfragen, die diese Extension beantwortet hat – Methode, Quelle und Ergebnis, keine Nachrichteninhalte. Neueste zuerst."
+  },
+  "auditColTime": {
+    "message": "Zeit"
+  },
+  "auditColWho": {
+    "message": "Quelle"
+  },
+  "auditColMethod": {
+    "message": "Methode"
+  },
+  "auditColResult": {
+    "message": "Ergebnis"
+  },
+  "auditOk": {
+    "message": "ok"
+  },
+  "auditDenied": {
+    "message": "abgelehnt"
+  },
+  "auditNone": {
+    "message": "Noch keine Einträge."
+  },
+  "auditAllSources": {
+    "message": "Alle Quellen"
+  },
+  "btnAuditRefresh": {
+    "message": "Aktualisieren"
+  },
+  "btnAuditClear": {
+    "message": "Log leeren"
+  },
+  "confirmAuditClear": {
+    "message": "Audit-Log leeren? Alte Einträge sind danach weg."
+  },
   "approvalsHeading": {
     "message": "Website-Freigaben"
   },

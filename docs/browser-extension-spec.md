@@ -244,6 +244,9 @@ grunq_signer:sessions      [ { secret, relays, clientPub, perms,
                              clientName, bound, created, lastActive } ]
 grunq_signer:settings      relays (global allowlist), idleMinutes,
                            autoLock
+grunq_signer:audit         [ { ts, scope: 'nip46'|'nip07', method,
+                             ok, code, kind, clientPub, clientName,
+                             origin } ] — max. 300, neueste zuletzt
 ```
 
 ## 7. Security
@@ -290,8 +293,12 @@ grunq_signer:settings      relays (global allowlist), idleMinutes,
 - **Relays:** globale Allowlist; Session-Relays aus der nostrconnect-URI
   nur akzeptieren, wenn sie in der Allowlist stehen oder der Nutzer sie
   einzeln bestätigt. Kein Klartext-Telemetrie-Event.
-- **Audit:** letzte 50 Anfragen pro Session im Popup einsehbar
-  (Zeit, Methode, Client, Ergebnis).
+- **Audit (umgesetzt):** `src/signer/audit.js` schreibt jede beantwortete
+  NIP-46-Anfrage (Methode, Client-Pubkey/-Name, Kind, ok/Fehlercode) und
+  die NIP-07-Signier-/Decrypt-Aufrufe (Origin, Methode, Kind) nach
+  `grunq_signer:audit` (max. 300, per Session 50 angezeigt). Keine
+  Nachrichteninhalte, keine Schlüssel. Die Options-Seite zeigt die Liste
+  filterbar pro Client/Website und kann sie leeren.
 
 ## 8. Standard-Connect-Relay und Nutzerprofil (grunq.com)
 
@@ -315,8 +322,8 @@ grunq_signer:settings      relays (global allowlist), idleMinutes,
   dort dauerhaft auflösbar ist („Profil dort speichern"). Wie im
   Grunq-Knoten (GQ-09/GQ-26) folgt eine Nachveröffentlichung beim Start,
   falls das Profil dort fehlt.
-  **Umsetzung (17.11.2026):** Popup-Karte „Profil" (eingeklappt, „Bearbeiten"
-  öffnet das Formular), `src/signer/profile.js` normalisiert Felder
+  **Umsetzung (17.11.2026):** Abschnitt „Profil" der Options-Seite,
+  `src/signer/profile.js` normalisiert Felder
   (Trim + Längen-Caps, nur diese sechs Schlüssel), signiert Kind 0 mit der
   Identität und veröffentlicht an die **Relay-Allowlist** (also inkl.
   `relay.grunq.com`, wenn eingetragen); Felder werden vor dem Publish
@@ -387,11 +394,12 @@ laufen unverändert im Knoten, siehe auch GQ-03.)
   Kinds-Whitelist, Audit-Log, ncryptsec-Import, Auto-Lock, Profil-Editor
   (Kind 0) mit Veröffentlichung an die Allowlist-Relays.
   **Stand 17.11.2026:** nostrconnect-Kopplung, Kind-Freigaben, QR-Export,
-  ncryptsec-Import/-Export, Auto-Lock und der Profil-Editor sind umgesetzt
-  (Tests: `test/nip49.test.mjs` gegen den NIP-49-Vektor,
-  `test/keystore.test.mjs` für Sperren/Entsperren/Idle,
-  `test/profile.test.mjs` für Publish/Fetch/NIP-09). Offen: Audit-Log,
-  Options-Seite, Nachveröffentlichung des Profils beim Start.
+  ncryptsec-Import/-Export, Auto-Lock, Profil-Editor, Audit-Log und die
+  Options-Seite sind umgesetzt (Tests: `test/nip49.test.mjs` gegen den
+  NIP-49-Vektor, `test/keystore.test.mjs` für Sperren/Entsperren/Idle,
+  `test/profile.test.mjs` für Publish/Fetch/NIP-09,
+  `test/audit.test.mjs` für das Log). Offen: Nachveröffentlichung des
+  Profils beim Start.
 - **M4 (optional):** Multi-Identity (Streamer-/Chat-Identität getrennt),
   NIP-26-Delegation, Web-NWC (`nostr+walletconnect`) als Client-Rolle.
 

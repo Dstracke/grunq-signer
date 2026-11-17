@@ -226,6 +226,83 @@
       }
     }
   },
+  "btnSettings": {
+    "message": "Settings"
+  },
+  "optionsHint": {
+    "message": "Changes take effect immediately. The popup keeps the quick actions: unlock, QR export and bunker invitations."
+  },
+  "optionsNoIdentity": {
+    "message": "No identity set up yet. Open the extension popup to import or create one."
+  },
+  "secBadgeEncrypted": {
+    "message": "encrypted"
+  },
+  "secBadgeLocked": {
+    "message": "locked"
+  },
+  "profilePublishedChip": {
+    "message": "published"
+  },
+  "profileDraftChip": {
+    "message": "not published"
+  },
+  "approvalsOptionsHint": {
+    "message": "Sites with window.nostr access. Remove a remembered kind to be asked again for it; removing the site revokes everything."
+  },
+  "permOnRequest": {
+    "message": "asks every time"
+  },
+  "revokeKindTitle": {
+    "message": "Ask again for kind $KIND$",
+    "placeholders": {
+      "kind": {
+        "content": "$1"
+      }
+    }
+  },
+  "btnRevokeOrigin": {
+    "message": "Revoke site"
+  },
+  "auditHeading": {
+    "message": "Audit log"
+  },
+  "auditHint": {
+    "message": "The last requests this extension answered — method, source and outcome, no message contents. Newest first."
+  },
+  "auditColTime": {
+    "message": "Time"
+  },
+  "auditColWho": {
+    "message": "Source"
+  },
+  "auditColMethod": {
+    "message": "Method"
+  },
+  "auditColResult": {
+    "message": "Result"
+  },
+  "auditOk": {
+    "message": "ok"
+  },
+  "auditDenied": {
+    "message": "denied"
+  },
+  "auditNone": {
+    "message": "No entries yet."
+  },
+  "auditAllSources": {
+    "message": "All sources"
+  },
+  "btnAuditRefresh": {
+    "message": "Refresh"
+  },
+  "btnAuditClear": {
+    "message": "Clear log"
+  },
+  "confirmAuditClear": {
+    "message": "Clear the audit log? Old entries cannot be recovered."
+  },
   "approvalsHeading": {
     "message": "Site approvals"
   },

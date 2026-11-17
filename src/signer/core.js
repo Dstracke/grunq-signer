@@ -80,6 +80,7 @@ export function createSignerCore(env) {
     randomHex = (bytes) => bytesToHex(randomBytes(bytes)),
     signerPrivHex, // () => Promise<string>
     onActivity = () => {}, // user/client activity hook (keystore auto-lock)
+    onAudit = () => {}, // per-request audit entry (see signer/audit.js)
     log = () => {},
   } = env;
 
@@ -166,17 +167,45 @@ export function createSignerCore(env) {
 
     const [sessions, settings] = await Promise.all([loadSessions(), defaultSettings(storage)]);
     let result;
+    let ok = false;
+    let code = '';
     try {
       result = await dispatch(event, req, sessions, settings);
+      ok = true;
       await respond(event.pubkey, settings, req.id, result, null);
     } catch (e) {
-      const code = e?.nip46Code ?? 'internal';
+      code = e?.nip46Code ?? 'internal';
       log('nip46 request failed', req.method, code);
       try {
         await respond(event.pubkey, settings, req.id, null, secretError(code));
       } catch (sendErr) {
         log('nip46 respond failed', sendErr);
       }
+    }
+    // Audit after dispatch so `connect` already carries the client name.
+    try {
+      onAudit({
+        scope: 'nip46',
+        method: req.method,
+        ok,
+        code,
+        kind: requestKind(req),
+        clientPub: event.pubkey,
+        clientName: sessionForClient(sessions, event.pubkey)?.clientName ?? '',
+      });
+    } catch (auditErr) {
+      log('audit hook failed', auditErr);
+    }
+  }
+
+  // Kind of a sign_event request, for the audit log ("sign_event (Kind 1)").
+  function requestKind(req) {
+    if (req.method !== 'sign_event' || typeof req.params?.[0] !== 'string') return null;
+    try {
+      const ev = JSON.parse(req.params[0]);
+      return Number.isInteger(ev?.kind) ? ev.kind : null;
+    } catch {
+      return null;
     }
   }
 

@@ -17,6 +17,7 @@ import {
 } from '../signer/core.js';
 import { createKeystore } from '../signer/keystore.js';
 import { createProfileService } from '../signer/profile.js';
+import { createAuditLog } from '../signer/audit.js';
 
 const api = globalThis.browser ?? globalThis.chrome;
 
@@ -112,6 +113,12 @@ const profileTransport = {
     };
   },
 };
+
+const auditLog = createAuditLog({ storage: { get: getStore, set: setStore } });
+
+// NIP-07 calls worth showing in the audit log (a chat page polls
+// getPublicKey, that would only add noise).
+const NIP07_AUDIT = new Set(['signEvent', 'nip04.decrypt', 'nip44.decrypt']);
 
 const profileService = createProfileService({
   storage: { get: getStore, set: setStore },
@@ -212,6 +219,7 @@ const signerCore = createSignerCore({
   requestApproval,
   signerPrivHex: () => keystore.privateKeyHex(),
   onActivity: () => keystore.touch().catch(() => {}),
+  onAudit: (entry) => auditLog.record(entry).catch((e) => console.log('[audit] write failed', e)),
   log: (...args) => console.log('[nip46]', ...args),
 });
 
@@ -298,6 +306,28 @@ function senderOrigin(sender) {
 }
 
 async function handleRpc(msg, sender) {
+  const origin = senderOrigin(sender);
+  const method = String(msg?.method ?? '');
+  const kind = Number.isInteger(msg?.params?.event?.kind) ? msg.params.event.kind : null;
+  if (!NIP07_AUDIT.has(method)) return await dispatchRpc(msg, sender);
+  try {
+    const result = await dispatchRpc(msg, sender);
+    await auditLog.record({ scope: 'nip07', method, ok: true, origin: origin ?? '', kind });
+    return result;
+  } catch (e) {
+    await auditLog.record({
+      scope: 'nip07',
+      method,
+      ok: false,
+      code: e?.code ?? 'internal',
+      origin: origin ?? '',
+      kind,
+    });
+    throw e;
+  }
+}
+
+async function dispatchRpc(msg, sender) {
   const origin = senderOrigin(sender);
   if (!origin || !/^https?:$/.test(new URL(origin).protocol)) {
     throw err('no_permission');
@@ -535,6 +565,35 @@ async function handlePopup(msg) {
           : e;
         throw { code: 'publish_failed', message: t('profilePublishFailed', [String(e?.message ?? e)]) };
       }
+    }
+
+    // ---------- settings page (options) ----------
+
+    case 'audit.list': {
+      return await auditLog.list({
+        clientPub: typeof msg.clientPub === 'string' && msg.clientPub ? msg.clientPub : undefined,
+        origin: typeof msg.origin === 'string' && msg.origin ? msg.origin : undefined,
+        perSession: Number.isInteger(msg.limit) ? msg.limit : undefined,
+      });
+    }
+
+    case 'audit.clear': {
+      return await auditLog.clear();
+    }
+
+    // Remove one remembered sign kind from a site (the origin keeps its
+    // approval; only that kind asks again).
+    case 'revoke-kind': {
+      const origin = String(msg.origin ?? '');
+      const kind = Number(msg.kind);
+      const perms = (await getStore(STORE.PERMISSIONS)) ?? {};
+      if (!perms[origin]) throw err('invalid_input');
+      const kinds = Array.isArray(perms[origin].sign_kinds)
+        ? perms[origin].sign_kinds.filter((k) => Number(k) !== kind)
+        : [];
+      perms[origin] = { ...perms[origin], sign_kinds: kinds };
+      await setStore(STORE.PERMISSIONS, perms);
+      return { ok: true, signKinds: kinds };
     }
 
     case 'profile.delete': {

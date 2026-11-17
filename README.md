@@ -31,10 +31,10 @@ an identity onto a phone. **Passphrase protection (NIP-49) and auto-lock
 are implemented**: the popup encrypts the key with a passphrase
 (`ncryptsec`), keeps only the session key in memory, locks automatically
 after the configured idle time and exports the `ncryptsec` as a backup QR.
-The **profile editor** publishes the public kind-0 profile (name,
-display_name, about, picture, nip05, lud16) to the allow-listed relays and
-can load/delete it again. Still open from M3: audit log, options page,
-re-publishing the profile on start.
+The **options page** (extension settings, gear/"Settings" in the popup) holds
+the profile editor, the relay list, site approvals with per-kind revoke,
+bunker sessions and an **audit log** of the last answered requests. Still
+open from M3: re-publishing the profile on start.
 
 The full specification lives in
 [`docs/browser-extension-spec.md`](docs/browser-extension-spec.md)
@@ -98,10 +98,29 @@ bundled `qrcode-generator`; nothing is sent anywhere. Scan the nsec code with
 a signer app on the phone (NIP-46 client) or import the string there by hand.
 The secret is dropped from the popup as soon as the panel is collapsed.
 
+### Settings page and audit log
+
+The popup keeps the quick actions (unlock, QR export, invitations); the
+options page (**Settings** in the popup header, or the browser's extension
+settings) holds the writable parts:
+
+- **Profile** — the public kind-0 event broadcast live as a notification and
+  also published to the relay list; publishing/deleting requires an unlocked
+  identity.
+- **Relays** — the allow-list used for invitations, NIP-07 `getRelays` and
+  profile publishes.
+- **Site approvals** — each origin with the event kinds it may sign without
+  asking; the `×` on a kind chip brings back the confirmation for that kind
+  only, "Revoke site" removes the origin completely.
+- **Bunker connections** — active NIP-46 clients with name, npub and relays,
+  removable.
+- **Audit log** — the last requests the extension answered (time, source,
+  method + kind, ok/denied with error code), filterable per client or site
+  and clearable. It never stores message contents or keys.
+
 ### Publishing the profile
 
-The **Profile** card (collapsed by default, **Edit** opens it) edits the
-public kind-0 event: `name`, `display_name`, `about`, `picture`, `nip05` and
+The **Profile** section edits the public kind-0 event: `name`, `display_name`, `about`, `picture`, `nip05` and
 `lud16`. **Publish profile** signs it with the identity and sends it to the
 configured relay list (including `relay.grunq.com` when it is there); the
 fields are saved locally first, so a relay problem never loses your input.

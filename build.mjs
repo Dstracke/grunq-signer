@@ -13,6 +13,7 @@ await build({
     'src/content/bridge.js',
     'src/popup/popup.js',
     'src/approval/approval.js',
+    'src/options/options.js',
   ],
   outdir: OUT,
   bundle: true,
@@ -38,7 +39,7 @@ async function copyTree(src, dest, extensions) {
 // relative paths the bundles live in (esbuild output is not overwritten
 // because only html/css/png/woff2/json are copied)
 await cp('src/manifest.json', join(OUT, 'manifest.json'));
-for (const dir of ['popup', 'approval']) {
+for (const dir of ['popup', 'approval', 'options']) {
   await copyTree(join('src', dir), join(OUT, dir), ['html', 'css']);
 }
 await copyTree(join('src', '_locales'), join(OUT, '_locales'), ['json']);

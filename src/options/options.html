@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Grunq Signer</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <header>
+    <img class="logo" src="../icons/grunq-32.png" alt="Grunq" width="28" height="28">
+    <div class="titles">
+      <h1>Grunq Signer</h1>
+      <p id="identity-line" class="muted mono">…</p>
+    </div>
+  </header>
+
+  <main>
+    <p id="global-error" class="error" hidden></p>
+
+    <section id="view-missing" class="card" hidden>
+      <p class="hint" data-i18n="optionsNoIdentity"></p>
+    </section>
+
+    <section class="card" id="card-profile">
+      <div class="card-head">
+        <h2 data-i18n="profileHeading"></h2>
+        <span id="profile-state" class="chip"></span>
+      </div>
+      <p class="hint" data-i18n="profilePublishHint"></p>
+      <div class="grid">
+        <label class="flabel" for="pf-name" data-i18n="profileName"></label>
+        <input id="pf-name" class="field" type="text" spellcheck="false">
+        <label class="flabel" for="pf-display-name" data-i18n="profileDisplayName"></label>
+        <input id="pf-display-name" class="field" type="text" spellcheck="false">
+        <label class="flabel" for="pf-nip05" data-i18n="profileNip05"></label>
+        <input id="pf-nip05" class="field" type="text" spellcheck="false" placeholder="name@domain">
+        <label class="flabel" for="pf-lud16" data-i18n="profileLud16"></label>
+        <input id="pf-lud16" class="field" type="text" spellcheck="false" placeholder="name@wallet">
+        <label class="flabel" for="pf-picture" data-i18n="profilePicture"></label>
+        <input id="pf-picture" class="field" type="url" spellcheck="false" placeholder="https://…">
+      </div>
+      <label class="flabel" for="pf-about" data-i18n="profileAbout"></label>
+      <textarea id="pf-about" rows="3" spellcheck="false"></textarea>
+      <div class="row">
+        <button id="btn-profile-publish" class="primary" data-i18n="btnPublishProfile"></button>
+        <button id="btn-profile-fetch" data-i18n="btnFetchProfile"></button>
+        <button id="btn-profile-delete" class="danger" data-i18n="btnDeleteProfile"></button>
+      </div>
+      <p id="profile-status" class="hint" hidden></p>
+      <p id="profile-error" class="error" hidden></p>
+    </section>
+
+    <section class="card" id="card-relays">
+      <h2 data-i18n="relaysHeading"></h2>
+      <p class="hint" data-i18n="relaysHint"></p>
+      <textarea id="relays-input" class="mono" rows="4" spellcheck="false"></textarea>
+      <div class="row">
+        <button id="btn-relays-save" class="primary" data-i18n="btnRelaysSave"></button>
+      </div>
+      <p id="relays-status" class="hint" hidden></p>
+      <p id="relays-error" class="error" hidden></p>
+    </section>
+
+    <section class="card" id="card-approvals">
+      <h2 data-i18n="approvalsHeading"></h2>
+      <p class="hint" data-i18n="approvalsOptionsHint"></p>
+      <ul id="approvals" class="entries"></ul>
+      <p id="no-approvals" class="muted" data-i18n="noApprovals"></p>
+    </section>
+
+    <section class="card" id="card-sessions">
+      <h2 data-i18n="bunkerHeading"></h2>
+      <ul id="sessions" class="entries"></ul>
+      <p id="no-sessions" class="muted" data-i18n="noSessions"></p>
+    </section>
+
+    <section class="card" id="card-audit">
+      <div class="card-head">
+        <h2 data-i18n="auditHeading"></h2>
+        <div class="toolbar">
+          <select id="audit-filter" aria-label="Filter"></select>
+          <button id="btn-audit-refresh" class="mini" data-i18n="btnAuditRefresh"></button>
+          <button id="btn-audit-clear" class="mini danger" data-i18n="btnAuditClear"></button>
+        </div>
+      </div>
+      <p class="hint" data-i18n="auditHint"></p>
+      <table class="audit">
+        <thead>
+          <tr>
+            <th data-i18n="auditColTime"></th>
+            <th data-i18n="auditColWho"></th>
+            <th data-i18n="auditColMethod"></th>
+            <th data-i18n="auditColResult"></th>
+          </tr>
+        </thead>
+        <tbody id="audit-rows"></tbody>
+      </table>
+      <p id="audit-empty" class="muted" data-i18n="auditNone"></p>
+    </section>
+
+    <p class="hint footer" data-i18n="optionsHint"></p>
+  </main>
+
+  <script src="options.js"></script>
+</body>
+</html>
