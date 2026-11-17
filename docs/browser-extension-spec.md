@@ -125,11 +125,19 @@ Adapter-Layer `bg-runtime` (API-Unterschiede: SW-Lifecycle siehe §5.2,
   Einklappen, Ausblenden und bei Identitätswechsel wieder. Damit lässt
   sich eine Identität per Scan in eine Signer-App aufs Handy übertragen
   (Migration statt Multi-Geräte-Sync; §12 bleibt offen).
-- **Sprache:** Popup, Bestätigungsdialoge und Fehler folgen den
-  Browsereinstellungen über die WebExtension-i18n-Mechanik (`_locales/`
-  mit Deutsch + Englisch; Manifest-Texte via `__MSG_…__`,
-  `default_locale: en`). Code-Kommentare und README sind englisch
-  (Konvention: Englisch nach innen).
+- **Sprache:** Popup, Bestätigungsdialoge, Options-Seite und Fehler
+  folgen den Browsereinstellungen über die WebExtension-i18n-Mechanik
+  (`_locales/` mit Deutsch + Englisch; Manifest-Texte via `__MSG_…__`).
+  **Englisch ist Default und Fallback** (`default_locale: en`): Browser
+  ohne passende Locale (z. B. fr) erhalten Englisch; die Auswahl folgt
+  dem Standard (exakte Locale → regionslos → scriptlos → Default).
+  `test/i18n.test.mjs` (auch `npm run i18n:check`) erzwingt Schlüssel-
+  parität zwischen den Katalogen, nicht-leere Texte, deklarierte
+  Platzhalter (Namen case-insensitiv) und dass jeder in HTML/JS benutzte
+  Schlüssel in jeder Sprache existiert; `alt`/`aria-label`/`title`
+  laufen über `data-i18n-alt`/`-aria-label`/`-title`. Neue Sprache = eine
+  weitere `messages.json` mit denselben Schlüsseln. Code-Kommentare und
+  README sind englisch (Konvention: Englisch nach innen).
 
 ## 5. NIP-46-Signer-Schicht
 

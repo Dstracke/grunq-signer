@@ -11,9 +11,17 @@ Grunq bootstrap relay `wss://relay.grunq.com` (editable, no cloud
 requirement); the public user profile (kind 0) is managed in the extension
 and published to the allow-listed relays.
 
-The UI language (popup, dialogs, errors) follows the browser settings
-automatically via the WebExtension i18n mechanism (`_locales/`, English +
-German; manifest strings via `__MSG_…__`).
+The UI language follows the browser: popup, approval dialogs, options page,
+error texts and the manifest strings all go through the WebExtension i18n
+mechanism (`_locales/`). **English is the default and fallback locale**
+(`default_locale: en`), German is bundled as well; a French (or any other)
+browser therefore gets English, a German browser gets German.
+
+Selection order (WebExtension standard): exact browser locale (`de-DE`),
+regionless (`de`), scriptless, then `default_locale`. Adding a language means
+adding one `_locales/<code>/messages.json` with the same keys — `npm run
+i18n:check` (also part of `npm test`) fails the build if a locale misses a key,
+has an empty message or an undeclared `$PLACEHOLDER$`.
 
 ## Status
 

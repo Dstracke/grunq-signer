@@ -16,6 +16,18 @@ function initI18n() {
   for (const node of document.querySelectorAll('[data-i18n]')) {
     node.textContent = t(node.dataset.i18n);
   }
+  for (const node of document.querySelectorAll('[data-i18n-placeholder]')) {
+    node.placeholder = t(node.dataset.i18nPlaceholder);
+  }
+  for (const node of document.querySelectorAll('[data-i18n-alt]')) {
+    node.alt = t(node.dataset.i18nAlt);
+  }
+  for (const node of document.querySelectorAll('[data-i18n-aria-label]')) {
+    node.setAttribute('aria-label', t(node.dataset.i18nAriaLabel));
+  }
+  for (const node of document.querySelectorAll('[data-i18n-title]')) {
+    node.title = t(node.dataset.i18nTitle);
+  }
 }
 
 function eventPreview(ev, origin, metaKey = 'eventMeta') {

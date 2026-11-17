@@ -368,6 +368,9 @@
   "auditAllSources": {
     "message": "Alle Quellen"
   },
+  "auditFilterLabel": {
+    "message": "Audit-Log nach Quelle filtern"
+  },
   "btnAuditRefresh": {
     "message": "Aktualisieren"
   },

@@ -369,6 +369,9 @@
   "auditAllSources": {
     "message": "All sources"
   },
+  "auditFilterLabel": {
+    "message": "Filter audit log by source"
+  },
   "btnAuditRefresh": {
     "message": "Refresh"
   },
