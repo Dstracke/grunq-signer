@@ -229,26 +229,43 @@ Delegation (NIP-26) in Stufe 1.
 ## 6. Datenmodell (Storage)
 
 ```
-grunq_signer:key           NIP-49-ncryptsec (siehe §7) oder Klartext
-                           nsec in storage.local (Stufe 1, opt-in)
-grunq_signer:identity      pubkey, name, erstellt
-grunq_signer:permissions   { origin: { nip07: bool, kinds: [..] } }
-grunq_signer:sessions      { client_pubkey: { name, relays, methods,
-                             auto_approve_kinds, last_active, created } }
-grunq_signer:pairings      offene Pairing-Invites { secret, relays,
-                           expires, client_hint }
-grunq_signer:settings      idle_minutes, relays (global allowlist),
-                           confirm_defaults, lock
+grunq_signer:key           { privHex }  (Stufe 1, Klartext) ODER
+                           { ncryptsec } (NIP-49, siehe §7)
+grunq_signer:session       storage.session (nur RAM): { privHex,
+                           unlockedAt } — entsperrter Klartext während
+                           der Browser-Sitzung, nie auf Platte
+grunq_signer:identity      pubkey, erstellt (öffentlich, auch gesperrt
+                           lesbar)
+grunq_signer:permissions   { origin: { nip07: bool, sign_kinds: [..] } }
+grunq_signer:sessions      [ { secret, relays, clientPub, perms,
+                             clientName, bound, created, lastActive } ]
+grunq_signer:settings      relays (global allowlist), idleMinutes,
+                           autoLock
 ```
 
 ## 7. Security
 
-- **Key at rest:** Stufe 1 Klartext-nsec im Extension-Storage ist Browser-
-  Standard (wie NIP-07-Extensions); Empfehlung und Option: Import als
-  NIP-49-`ncryptsec` + lokale Passphrase, Auto-Lock nach Idle. Export nur
-  über expliziten Dialog mit Bestätigung — umgesetzt als QR-Panel mit
-  zweistufiger nsec-Freigabe (§4.2); der nsec verlässt den Background nur
-  auf diese eine, bestätigte Popup-Anfrage.
+- **Key at rest (umgesetzt):** Standard bleibt der Klartext-nsec in
+  `storage.local` (Stufe 1, wie bei NIP-07-Extensions), aber das Popup
+  bietet **„Mit Passphrase verschlüsseln"**: `grunq_signer:key` hält dann
+  nur noch das NIP-49-`ncryptsec` (`src/lib/nip49.js`, scrypt log_n=16,
+  XChaCha20-Poly1305, Key-Security-Byte 0x00 = „vorher unsicher
+  gespeichert"). Der entschlüsselte Schlüssel lebt ausschließlich in
+  `storage.session` und verschwindet mit dem Browser-Neustart; die
+  Passphrase wird nie gespeichert. Import per `ncryptsec` (Passphrase
+  wird im Import-Feld abgefragt) und Export des ncryptsec als Backup
+  (Text + QR) sind vorhanden. Export des nsec nur über den explizit
+  bestätigten Dialog (§4.2); er verlangt ein entsperrtes Store.
+- **Auto-Lock (umgesetzt):** Ist der Schlüssel verschlüsselt, sperrt die
+  Extension nach `idleMinutes` (Standard 30, im Popup 1–240 einstellbar,
+  `autoLock` abschaltbar) ohne Aktivität: Der Keepalive-Alarm prüft
+  minütlich, jede NIP-07-Anfrage **und jeder echte NIP-46-Request** des
+  verbundenen Clients zählen als Aktivität (`onActivity`-Hook →
+  `keystore.touch()`). Ein laufender Stream hält sich damit selbst
+  entsperrt, ein stiller Browser sperrt. Gesperrt gilt: keine Signaturen,
+  keine Kopplung, kein Export; der NIP-46-Signer pausiert (der Grunq-
+  Knoten wartet wie bei einer schlafenden Signer-App), das Popup zeigt
+  nur das Entsperrfeld. Fehlercode an Seiten/Clients: `error:locked`.
 - **Kein Key-Transfer via Content-Script:** der nsec verlässt den
   Background nie; Seiten sehen ausschließlich signierte Ergebnisse.
 - **Phishing:** NIP-07-Bestätigungen zeigen immer die volle Origin; im
@@ -351,6 +368,11 @@ laufen unverändert im Knoten, siehe auch GQ-03.)
 - **M3 — Poliert:** nostrconnect-Kopplung inkl. Options-Seiten-Deep-Link,
   Kinds-Whitelist, Audit-Log, ncryptsec-Import, Auto-Lock, Profil-Editor
   (Kind 0) mit Veröffentlichung an die Allowlist-Relays.
+  **Stand 17.11.2026:** nostrconnect-Kopplung, Kind-Freigaben, QR-Export,
+  ncryptsec-Import/-Export und Auto-Lock sind umgesetzt (Tests:
+  `test/nip49.test.mjs` gegen den NIP-49-Vektor, `test/keystore.test.mjs`
+  für Sperren/Entsperren/Idle). Offen: Audit-Log, Profil-Editor,
+  Options-Seite.
 - **M4 (optional):** Multi-Identity (Streamer-/Chat-Identität getrennt),
   NIP-26-Delegation, Web-NWC (`nostr+walletconnect`) als Client-Rolle.
 

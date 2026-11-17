@@ -1,5 +1,9 @@
 // Bech32 per BIP-173 (used for nsec/npub, NIP-19 prefix handling).
+// BIP-173 caps segwit addresses at 90 characters; Nostr and NIP-49
+// (ncryptsec, 162 chars) use bech32 without that cap, so the general limit
+// here is only a sanity bound.
 const CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
+const MAX_LENGTH = 5000;
 
 function polymod(values) {
   const GEN = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3];
@@ -73,7 +77,7 @@ export function decodeBech32(str) {
   }
   const lowered = s.toLowerCase();
   const pos = lowered.lastIndexOf('1');
-  if (pos < 1 || pos + 7 > lowered.length || lowered.length > 90) {
+  if (pos < 1 || pos + 7 > lowered.length || lowered.length > MAX_LENGTH) {
     throw new Error('bech32: invalid separator position');
   }
   const hrp = lowered.slice(0, pos);

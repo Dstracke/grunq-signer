@@ -15,6 +15,8 @@
     <p class="hint" data-i18n="popupSetupHint"></p>
     <textarea id="key-input" rows="3" spellcheck="false"
       data-i18n-placeholder="keyPlaceholder"></textarea>
+    <input id="key-passphrase" class="field" type="password" autocomplete="off"
+      data-i18n-placeholder="importPassphrasePlaceholder">
     <div class="row">
       <button id="btn-import" class="primary" data-i18n="btnImport"></button>
       <button id="btn-generate" data-i18n="btnGenerate"></button>
@@ -72,6 +74,65 @@
         </div>
         <p id="export-error" class="error" hidden></p>
       </div>
+    </section>
+
+    <section class="card">
+      <h2 data-i18n="securityHeading"></h2>
+      <p id="sec-state" class="hint"></p>
+
+      <div id="sec-unlock" hidden>
+        <input id="unlock-password" class="field" type="password" autocomplete="current-password"
+          data-i18n-placeholder="unlockPassphrasePlaceholder">
+        <div class="row">
+          <button id="btn-unlock" class="primary" data-i18n="btnUnlock"></button>
+        </div>
+      </div>
+
+      <div id="sec-passphrase">
+        <p id="sec-passphrase-hint" class="hint" data-i18n="secProtectHint"></p>
+        <input id="new-password" class="field" type="password" autocomplete="new-password"
+          data-i18n-placeholder="newPassphrasePlaceholder">
+        <input id="new-password-repeat" class="field" type="password" autocomplete="new-password"
+          data-i18n-placeholder="repeatPassphrasePlaceholder">
+        <div class="row">
+          <button id="btn-protect" class="primary" data-i18n="btnProtect"></button>
+        </div>
+      </div>
+
+      <div id="sec-options" hidden>
+        <hr class="sep">
+        <label class="check">
+          <input type="checkbox" id="auto-lock">
+          <span data-i18n="secAutoLock"></span>
+        </label>
+        <label class="check">
+          <input type="number" id="idle-minutes" min="1" max="240" step="1">
+          <span data-i18n="secIdleLabel"></span>
+        </label>
+        <div class="row">
+          <button id="btn-security-save" data-i18n="btnSaveSecurity"></button>
+          <button id="btn-lock" data-i18n="btnLockNow"></button>
+        </div>
+        <div class="row">
+          <button id="btn-unprotect" class="danger" data-i18n="btnUnprotect"></button>
+        </div>
+        <p id="sec-saved" class="hint" hidden data-i18n="secSaved"></p>
+      </div>
+
+      <div id="backup-box" hidden>
+        <hr class="sep">
+        <h3 data-i18n="backupHeading"></h3>
+        <p class="hint" data-i18n="backupHint"></p>
+        <textarea id="backup-value" class="mono" rows="3" readonly spellcheck="false"></textarea>
+        <div class="qr-wrap">
+          <img id="qr-backup" class="qr" alt="ncryptsec">
+        </div>
+        <div class="row">
+          <button id="btn-backup-copy" data-i18n="btnCopyBackup"></button>
+        </div>
+      </div>
+
+      <p id="sec-error" class="error" hidden></p>
     </section>
 
     <section class="card">

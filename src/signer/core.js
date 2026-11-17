@@ -59,6 +59,8 @@ export async function defaultSettings(store) {
     settings.relays = [...DEFAULT_RELAYS];
   }
   if (!Number.isFinite(settings.idleMinutes)) settings.idleMinutes = 30;
+  // Auto-lock only matters for encrypted key storage; it is on by default.
+  if (typeof settings.autoLock !== 'boolean') settings.autoLock = true;
   return settings;
 }
 
@@ -77,6 +79,7 @@ export function createSignerCore(env) {
     now = () => Date.now(),
     randomHex = (bytes) => bytesToHex(randomBytes(bytes)),
     signerPrivHex, // () => Promise<string>
+    onActivity = () => {}, // user/client activity hook (keystore auto-lock)
     log = () => {},
   } = env;
 
@@ -142,6 +145,13 @@ export function createSignerCore(env) {
     if (!verifyEvent(event)) return;
     const pTags = (event.tags ?? []).filter((t) => t[0] === 'p').map((t) => t[1]);
     if (!pTags.includes(myPub)) return;
+    // Real client traffic counts as activity; the keepalive alarm alone must
+    // not keep an idle browser unlocked forever.
+    try {
+      onActivity();
+    } catch (e) {
+      log('activity hook failed', e);
+    }
 
     let req;
     try {
@@ -660,6 +670,9 @@ export function createSignerCore(env) {
       for (const h of subHandles) h.close();
       subHandles = [];
       started = false;
+      // The identity may change while stopped (key import/removal, unlock of
+      // another ncryptsec) - never reuse a cached signer pubkey.
+      signerPubPromise = null;
     },
   };
 }

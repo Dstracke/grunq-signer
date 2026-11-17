@@ -1,142 +1,411 @@
 {
-  "extName": { "message": "Grunq Signer" },
-  "extDescription": { "message": "Nostr signer extension: NIP-07 provider (window.nostr) for web apps. Your keys stay in the extension." },
-  "popupSetupHint": { "message": "No identity set up yet. Import your key (nsec1…) or create a new one — it never leaves the extension." },
-  "keyPlaceholder": { "message": "nsec1… or 64-character hex key" },
-  "btnImport": { "message": "Import" },
-  "btnGenerate": { "message": "Create new" },
-  "identityHeading": { "message": "Identity" },
-  "btnCopy": { "message": "Copy npub" },
-  "btnCopied": { "message": "Copied!" },
-  "btnRemove": { "message": "Delete identity" },
-  "confirmRemove": { "message": "Really delete the identity from the extension? The key is gone for good — make sure you have a backup." },
-  "btnQr": { "message": "QR code / export" },
-  "qrNpubHeading": { "message": "Public key (npub)" },
-  "qrNpubHint": { "message": "Safe to share: scan this with another client to follow or mention this identity locally — e.g. to copy it to your phone." },
-  "qrRenderError": { "message": "QR code could not be created — copy the text instead." },
-  "qrNsecHeading": { "message": "Secret key (nsec)" },
-  "qrNsecWarn": { "message": "The nsec is your complete identity: whoever reads or scans it can sign and decrypt in your name. Cameras, screenshots and shoulder surfers all count." },
-  "btnShowNsec": { "message": "Show secret key" },
+  "extName": {
+    "message": "Grunq Signer"
+  },
+  "extDescription": {
+    "message": "Nostr signer extension: NIP-07 provider (window.nostr) for web apps. Your keys stay in the extension."
+  },
+  "popupSetupHint": {
+    "message": "No identity set up yet. Import your key (nsec1…) or create a new one — it never leaves the extension."
+  },
+  "keyPlaceholder": {
+    "message": "nsec1… or 64-character hex key"
+  },
+  "btnImport": {
+    "message": "Import"
+  },
+  "btnGenerate": {
+    "message": "Create new"
+  },
+  "identityHeading": {
+    "message": "Identity"
+  },
+  "btnCopy": {
+    "message": "Copy npub"
+  },
+  "btnCopied": {
+    "message": "Copied!"
+  },
+  "btnRemove": {
+    "message": "Delete identity"
+  },
+  "confirmRemove": {
+    "message": "Really delete the identity from the extension? The key is gone for good — make sure you have a backup."
+  },
+  "importPassphrasePlaceholder": {
+    "message": "Passphrase (only needed for an ncryptsec backup)"
+  },
+  "securityHeading": {
+    "message": "Security"
+  },
+  "secStatePlaintext": {
+    "message": "The key is stored unencrypted in the extension. A passphrase protects it at rest (NIP-49)."
+  },
+  "secStateUnlocked": {
+    "message": "Encrypted with a passphrase — unlocked."
+  },
+  "secStateLocked": {
+    "message": "Locked — unlock to sign, connect or export."
+  },
+  "secProtectHint": {
+    "message": "Encrypt the key at rest. Afterwards the extension asks for the passphrase on each browser start and after the idle time."
+  },
+  "secChangeHint": {
+    "message": "Change the passphrase. The identity stays the same; a new ncryptsec backup is shown afterwards."
+  },
+  "newPassphrasePlaceholder": {
+    "message": "New passphrase (at least 8 characters)"
+  },
+  "repeatPassphrasePlaceholder": {
+    "message": "Repeat the passphrase"
+  },
+  "unlockPassphrasePlaceholder": {
+    "message": "Passphrase"
+  },
+  "btnUnlock": {
+    "message": "Unlock"
+  },
+  "btnProtect": {
+    "message": "Encrypt with passphrase"
+  },
+  "btnChangePass": {
+    "message": "Change passphrase"
+  },
+  "btnUnprotect": {
+    "message": "Remove passphrase protection"
+  },
+  "confirmUnprotect": {
+    "message": "Remove the passphrase protection? The key is then stored unencrypted in the extension again."
+  },
+  "secAutoLock": {
+    "message": "Lock automatically after inactivity"
+  },
+  "secIdleLabel": {
+    "message": "minutes without activity (1–240)"
+  },
+  "btnSaveSecurity": {
+    "message": "Save"
+  },
+  "btnLockNow": {
+    "message": "Lock now"
+  },
+  "secSaved": {
+    "message": "Saved."
+  },
+  "backupHeading": {
+    "message": "Passphrase backup (ncryptsec)"
+  },
+  "backupHint": {
+    "message": "Keep this ncryptsec somewhere safe (paper, password manager). Together with the passphrase it unlocks the identity — without it a forgotten passphrase means the identity is gone."
+  },
+  "btnCopyBackup": {
+    "message": "Copy ncryptsec"
+  },
+  "errorLocked": {
+    "message": "The signer is locked — open the Grunq Signer popup and unlock it."
+  },
+  "errorWrongPassword": {
+    "message": "Wrong passphrase."
+  },
+  "errorWeakPassword": {
+    "message": "The passphrase needs at least 8 characters."
+  },
+  "errorPasswordMismatch": {
+    "message": "The two passphrases do not match."
+  },
+  "btnQr": {
+    "message": "QR code / export"
+  },
+  "qrNpubHeading": {
+    "message": "Public key (npub)"
+  },
+  "qrNpubHint": {
+    "message": "Safe to share: scan this with another client to follow or mention this identity locally — e.g. to copy it to your phone."
+  },
+  "qrRenderError": {
+    "message": "QR code could not be created — copy the text instead."
+  },
+  "qrNsecHeading": {
+    "message": "Secret key (nsec)"
+  },
+  "qrNsecWarn": {
+    "message": "The nsec is your complete identity: whoever reads or scans it can sign and decrypt in your name. Cameras, screenshots and shoulder surfers all count."
+  },
+  "btnShowNsec": {
+    "message": "Show secret key"
+  },
   "qrNsecConfirm": {
     "message": "Really show the secret key? Make sure nobody can see your screen and that you have a backup. After importing it on the phone, delete the identity here if you no longer need it on this browser.",
     "placeholders": {}
   },
-  "btnShowNsecConfirm": { "message": "Yes, show nsec" },
-  "btnCancel": { "message": "Cancel" },
-  "btnHide": { "message": "Hide" },
-  "btnCopyNsec": { "message": "Copy nsec" },
-  "qrNsecScanHint": { "message": "Scan with a signer app on your phone (NIP-46 client, e.g. Amber or nsec.app) or import the nsec there by hand." },
-  "approvalsHeading": { "message": "Site approvals" },
-  "noApprovals": { "message": "No approvals yet." },
-  "btnRevoke": { "message": "Remove" },
-  "popupHint": { "message": "Approved sites get window.nostr (NIP-07). You confirm every signature in a separate window." },
-  "bunkerHeading": { "message": "Bunker connections" },
-  "bunkerHint": { "message": "Let other devices or programs use this identity over Nostr relays (NIP-46) — they never see your key. Paste the invitation URI into the connecting program, e.g. the Grunq dashboard's \"Connect identity\"." },
-  "btnInvite": { "message": "Create invitation" },
-  "btnCopyUri": { "message": "Copy URI" },
-  "inviteExpires": { "message": "The invitation is valid until it is paired or removed. Connections can be removed here at any time." },
-  "noSessions": { "message": "No connections yet." },
-  "sessionWaiting": { "message": "waiting for connection…" },
-  "relaysHeading": { "message": "Relays" },
-  "relaysHint": { "message": "One relay per line (wss://…). Used for bunker invitations and reported to NIP-07 apps. The Grunq bootstrap relay is the default; everything works with your own relays too." },
-  "btnRelaysSave": { "message": "Save relays" },
-  "relaysSaved": { "message": "Relays saved." },
-  "nip46ErrorSessionLimit": { "message": "Connection limit reached (16). Remove an old connection first." },
-  "nip46ErrorNoRelays": { "message": "No relays configured — add at least one relay above." },
-  "errorNoKey": { "message": "No identity set up yet — open the extension first and add a key." },
-  "errorDenied": { "message": "The website was not granted access." },
-  "errorInvalidInput": { "message": "Invalid request." },
-  "errorNoPermission": { "message": "Approval missing for this action." },
-  "errorInternal": { "message": "Internal error." },
+  "btnShowNsecConfirm": {
+    "message": "Yes, show nsec"
+  },
+  "btnCancel": {
+    "message": "Cancel"
+  },
+  "btnHide": {
+    "message": "Hide"
+  },
+  "btnCopyNsec": {
+    "message": "Copy nsec"
+  },
+  "qrNsecScanHint": {
+    "message": "Scan with a signer app on your phone (NIP-46 client, e.g. Amber or nsec.app) or import the nsec there by hand."
+  },
+  "approvalsHeading": {
+    "message": "Site approvals"
+  },
+  "noApprovals": {
+    "message": "No approvals yet."
+  },
+  "btnRevoke": {
+    "message": "Remove"
+  },
+  "popupHint": {
+    "message": "Approved sites get window.nostr (NIP-07). You confirm every signature in a separate window."
+  },
+  "bunkerHeading": {
+    "message": "Bunker connections"
+  },
+  "bunkerHint": {
+    "message": "Let other devices or programs use this identity over Nostr relays (NIP-46) — they never see your key. Paste the invitation URI into the connecting program, e.g. the Grunq dashboard's \"Connect identity\"."
+  },
+  "btnInvite": {
+    "message": "Create invitation"
+  },
+  "btnCopyUri": {
+    "message": "Copy URI"
+  },
+  "inviteExpires": {
+    "message": "The invitation is valid until it is paired or removed. Connections can be removed here at any time."
+  },
+  "noSessions": {
+    "message": "No connections yet."
+  },
+  "sessionWaiting": {
+    "message": "waiting for connection…"
+  },
+  "relaysHeading": {
+    "message": "Relays"
+  },
+  "relaysHint": {
+    "message": "One relay per line (wss://…). Used for bunker invitations and reported to NIP-07 apps. The Grunq bootstrap relay is the default; everything works with your own relays too."
+  },
+  "btnRelaysSave": {
+    "message": "Save relays"
+  },
+  "relaysSaved": {
+    "message": "Relays saved."
+  },
+  "nip46ErrorSessionLimit": {
+    "message": "Connection limit reached (16). Remove an old connection first."
+  },
+  "nip46ErrorNoRelays": {
+    "message": "No relays configured — add at least one relay above."
+  },
+  "errorNoKey": {
+    "message": "No identity set up yet — open the extension first and add a key."
+  },
+  "errorDenied": {
+    "message": "The website was not granted access."
+  },
+  "errorInvalidInput": {
+    "message": "Invalid request."
+  },
+  "errorNoPermission": {
+    "message": "Approval missing for this action."
+  },
+  "errorInternal": {
+    "message": "Internal error."
+  },
   "errorUnknownMethod": {
     "message": "Unknown method: $METHOD$",
-    "placeholders": { "method": { "content": "$1" } }
+    "placeholders": {
+      "method": {
+        "content": "$1"
+      }
+    }
   },
-  "timeout": { "message": "Timed out waiting for the signer extension" },
-  "titleLoading": { "message": "Requesting approval…" },
-  "titleAccess": { "message": "Website access to window.nostr" },
-  "titleSign": { "message": "Sign event?" },
-  "titleStale": { "message": "Request stale" },
-  "staleText": { "message": "This request no longer exists (stale or already decided)." },
+  "timeout": {
+    "message": "Timed out waiting for the signer extension"
+  },
+  "titleLoading": {
+    "message": "Requesting approval…"
+  },
+  "titleAccess": {
+    "message": "Website access to window.nostr"
+  },
+  "titleSign": {
+    "message": "Sign event?"
+  },
+  "titleStale": {
+    "message": "Request stale"
+  },
+  "staleText": {
+    "message": "This request no longer exists (stale or already decided)."
+  },
   "accessIntro": {
     "message": "The website $ORIGIN$ wants to use window.nostr.\n\nThat lets it read your public key and ask for signatures as well as encrypted messages (NIP-04/NIP-44). Every signature is confirmed separately.",
-    "placeholders": { "origin": { "content": "$1" } }
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
   },
   "signIntro": {
     "message": "The website $ORIGIN$ wants to sign the following event with your identity:",
-    "placeholders": { "origin": { "content": "$1" } }
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
   },
   "eventMeta": {
     "message": "Website: $ORIGIN$\nKind: $KIND$\nTime: $TIME$\nTags: $TAGS$",
     "placeholders": {
-      "origin": { "content": "$1" },
-      "kind": { "content": "$2" },
-      "time": { "content": "$3" },
-      "tags": { "content": "$4" }
+      "origin": {
+        "content": "$1"
+      },
+      "kind": {
+        "content": "$2"
+      },
+      "time": {
+        "content": "$3"
+      },
+      "tags": {
+        "content": "$4"
+      }
     }
   },
   "eventMetaNip46": {
     "message": "Client: $ORIGIN$\nKind: $KIND$\nTime: $TIME$\nTags: $TAGS$",
     "placeholders": {
-      "origin": { "content": "$1" },
-      "kind": { "content": "$2" },
-      "time": { "content": "$3" },
-      "tags": { "content": "$4" }
+      "origin": {
+        "content": "$1"
+      },
+      "kind": {
+        "content": "$2"
+      },
+      "time": {
+        "content": "$3"
+      },
+      "tags": {
+        "content": "$4"
+      }
     }
   },
-  "btnAllow": { "message": "Allow" },
-  "btnAlways": { "message": "Always allow" },
-  "btnDeny": { "message": "Deny" },
-  "btnSign": { "message": "Sign" },
+  "btnAllow": {
+    "message": "Allow"
+  },
+  "btnAlways": {
+    "message": "Always allow"
+  },
+  "btnDeny": {
+    "message": "Deny"
+  },
+  "btnSign": {
+    "message": "Sign"
+  },
   "btnAlwaysSignKind": {
     "message": "Always allow kind $KIND$",
-    "placeholders": { "kind": { "content": "$1" } }
+    "placeholders": {
+      "kind": {
+        "content": "$1"
+      }
+    }
   },
   "btnAlwaysSignKindOrigin": {
     "message": "Always allow kind $KIND$ from $ORIGIN$",
     "placeholders": {
-      "kind": { "content": "$1" },
-      "origin": { "content": "$2" }
+      "kind": {
+        "content": "$1"
+      },
+      "origin": {
+        "content": "$2"
+      }
     }
   },
   "permSignKinds": {
     "message": "Signs without asking: kind $KINDS$",
-    "placeholders": { "kinds": { "content": "$1" } }
+    "placeholders": {
+      "kinds": {
+        "content": "$1"
+      }
+    }
   },
-  "decisionSaved": { "message": "Decision saved — this window can be closed." },
-  "titleNip46Sign": { "message": "Sign event for a connected program?" },
+  "decisionSaved": {
+    "message": "Decision saved — this window can be closed."
+  },
+  "titleNip46Sign": {
+    "message": "Sign event for a connected program?"
+  },
   "nip46SignIntro": {
     "message": "The connected program $CLIENT$ wants to sign an event with your identity:",
-    "placeholders": { "client": { "content": "$1" } }
+    "placeholders": {
+      "client": {
+        "content": "$1"
+      }
+    }
   },
-  "titleNip46NostrConnect": { "message": "Allow pairing?" },
+  "titleNip46NostrConnect": {
+    "message": "Allow pairing?"
+  },
   "nip46NostrConnectIntro": {
     "message": "The program $CLIENT$ ($NPUB$) wants to connect to this identity as a NIP-46 client.\n\nSource: $ORIGIN$\nRelays: $RELAYS$\n\nAfter approval the extension confirms the pairing to the program.",
     "placeholders": {
-      "client": { "content": "$1" },
-      "npub": { "content": "$2" },
-      "origin": { "content": "$3" },
-      "relays": { "content": "$4" }
+      "client": {
+        "content": "$1"
+      },
+      "npub": {
+        "content": "$2"
+      },
+      "origin": {
+        "content": "$3"
+      },
+      "relays": {
+        "content": "$4"
+      }
     }
   },
-  "titleNip46Connect": { "message": "Allow connection?" },
+  "titleNip46Connect": {
+    "message": "Allow connection?"
+  },
   "nip46ConnectIntro": {
     "message": "The program $CLIENT$ ($NPUB$) wants to connect without a secret – this is normal after a client restart. Allow?",
     "placeholders": {
-      "client": { "content": "$1" },
-      "npub": { "content": "$2" }
+      "client": {
+        "content": "$1"
+      },
+      "npub": {
+        "content": "$2"
+      }
     }
   },
-  "titleNip46Decrypt": { "message": "Decrypt message?" },
+  "titleNip46Decrypt": {
+    "message": "Decrypt message?"
+  },
   "nip46DecryptIntro": {
     "message": "The program $CLIENT$ wants to decrypt an encrypted message.\n\nScheme: $SCHEME$\nPeer: $PEER$\n\nContent (start): $PAYLOAD$",
     "placeholders": {
-      "client": { "content": "$1" },
-      "scheme": { "content": "$2" },
-      "peer": { "content": "$3" },
-      "payload": { "content": "$4" }
+      "client": {
+        "content": "$1"
+      },
+      "scheme": {
+        "content": "$2"
+      },
+      "peer": {
+        "content": "$3"
+      },
+      "payload": {
+        "content": "$4"
+      }
     }
   },
-  "errorPairBusy": { "message": "A pairing is already in progress – please wait a moment." },
-  "nip46ErrorDenied": { "message": "Pairing or action denied." }
+  "errorPairBusy": {
+    "message": "A pairing is already in progress – please wait a moment."
+  },
+  "nip46ErrorDenied": {
+    "message": "Pairing or action denied."
+  }
 }

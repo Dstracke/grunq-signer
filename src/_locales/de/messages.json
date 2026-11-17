@@ -1,139 +1,410 @@
 {
-  "extName": { "message": "Grunq Signer" },
-  "extDescription": { "message": "Nostr-Signer-Extension: NIP-07-Provider (window.nostr) für Web-Apps. Deine Schlüssel bleiben in der Extension." },
-  "popupSetupHint": { "message": "Noch keine Identität eingerichtet. Importiere deinen Schlüssel (nsec1…) oder erstelle eine neue – sie verlässt die Extension nie." },
-  "keyPlaceholder": { "message": "nsec1… oder 64-stelliger Hex-Schlüssel" },
-  "btnImport": { "message": "Importieren" },
-  "btnGenerate": { "message": "Neu erstellen" },
-  "identityHeading": { "message": "Identität" },
-  "btnCopy": { "message": "npub kopieren" },
-  "btnCopied": { "message": "Kopiert!" },
-  "btnRemove": { "message": "Identität löschen" },
-  "confirmRemove": { "message": "Identität wirklich aus der Extension löschen? Der Schlüssel ist danach unwiederbringlich weg – stelle sicher, dass du ein Backup hast." },
-  "btnQr": { "message": "QR-Code / Export" },
-  "qrNpubHeading": { "message": "Öffentlicher Schlüssel (npub)" },
-  "qrNpubHint": { "message": "Unbedenklich weiterzugeben: Mit dem QR-Code lässt sich die Identität z. B. aufs Handy übertragen oder in einem anderen Client lokal hinterlegen." },
-  "qrRenderError": { "message": "QR-Code ließ sich nicht erzeugen – kopiere stattdessen den Text." },
-  "qrNsecHeading": { "message": "Geheimer Schlüssel (nsec)" },
-  "qrNsecWarn": { "message": "Der nsec ist deine vollständige Identität: Wer ihn liest oder abscannt, kann in deinem Namen signieren und entschlüsseln. Kameras, Screenshots und Mitlesende zählen mit." },
-  "btnShowNsec": { "message": "Geheimen Schlüssel anzeigen" },
-  "qrNsecConfirm": { "message": "Schlüssel wirklich anzeigen? Stelle sicher, dass niemand auf deinen Bildschirm sieht und dass du ein Backup hast. Wenn du ihn aufs Handy übertragen hast, lösche die Identität hier, falls du sie im Browser nicht mehr brauchst." },
-  "btnShowNsecConfirm": { "message": "Ja, nsec anzeigen" },
-  "btnCancel": { "message": "Abbrechen" },
-  "btnHide": { "message": "Ausblenden" },
-  "btnCopyNsec": { "message": "nsec kopieren" },
-  "qrNsecScanHint": { "message": "Mit einer Signer-App auf dem Handy scannen (NIP-46-Client, z. B. Amber oder nsec.app) oder den nsec dort von Hand importieren." },
-  "approvalsHeading": { "message": "Website-Freigaben" },
-  "noApprovals": { "message": "Noch keine Freigaben." },
-  "btnRevoke": { "message": "Entfernen" },
-  "popupHint": { "message": "Websites mit Freigabe erhalten window.nostr (NIP-07). Jede Signatur bestätigst du im Extra-Fenster." },
-  "bunkerHeading": { "message": "Bunker-Verbindungen" },
-  "bunkerHint": { "message": "Andere Geräte oder Programme dürfen diese Identität über Nostr-Relays nutzen (NIP-46) – dein Schlüssel bleibt dabei in der Extension. Füge die Einladungs-URI im verbindenden Programm ein, z. B. im Grunq-Dashboard unter „Identität verbinden“." },
-  "btnInvite": { "message": "Einladung erzeugen" },
-  "btnCopyUri": { "message": "URI kopieren" },
-  "inviteExpires": { "message": "Die Einladung bleibt gültig, bis sie gekoppelt oder entfernt wird. Verbindungen kannst du hier jederzeit aufheben." },
-  "noSessions": { "message": "Noch keine Verbindungen." },
-  "sessionWaiting": { "message": "wartet auf Verbindung …" },
-  "relaysHeading": { "message": "Relays" },
-  "relaysHint": { "message": "Ein Relay pro Zeile (wss://…). Genutzt für Bunker-Einladungen und NIP-07-Meldungen an Apps. Das Grunq-Bootstrap-Relay ist Default; alles läuft auch mit eigenen Relays." },
-  "btnRelaysSave": { "message": "Relays speichern" },
-  "relaysSaved": { "message": "Relays gespeichert." },
-  "nip46ErrorSessionLimit": { "message": "Verbindungslimit erreicht (16). Bitte zuerst eine alte Verbindung entfernen." },
-  "nip46ErrorNoRelays": { "message": "Keine Relays konfiguriert – oben mindestens ein Relay eintragen." },
-  "errorNoKey": { "message": "Keine Identität eingerichtet – bitte zuerst die Extension öffnen und einen Schlüssel hinterlegen." },
-  "errorDenied": { "message": "Die Website hat keinen Zugriff erhalten." },
-  "errorInvalidInput": { "message": "Ungültige Anfrage." },
-  "errorNoPermission": { "message": "Für diese Aktion fehlt die Freigabe." },
-  "errorInternal": { "message": "Interner Fehler." },
+  "extName": {
+    "message": "Grunq Signer"
+  },
+  "extDescription": {
+    "message": "Nostr-Signer-Extension: NIP-07-Provider (window.nostr) für Web-Apps. Deine Schlüssel bleiben in der Extension."
+  },
+  "popupSetupHint": {
+    "message": "Noch keine Identität eingerichtet. Importiere deinen Schlüssel (nsec1…) oder erstelle eine neue – sie verlässt die Extension nie."
+  },
+  "keyPlaceholder": {
+    "message": "nsec1… oder 64-stelliger Hex-Schlüssel"
+  },
+  "btnImport": {
+    "message": "Importieren"
+  },
+  "btnGenerate": {
+    "message": "Neu erstellen"
+  },
+  "identityHeading": {
+    "message": "Identität"
+  },
+  "btnCopy": {
+    "message": "npub kopieren"
+  },
+  "btnCopied": {
+    "message": "Kopiert!"
+  },
+  "btnRemove": {
+    "message": "Identität löschen"
+  },
+  "confirmRemove": {
+    "message": "Identität wirklich aus der Extension löschen? Der Schlüssel ist danach unwiederbringlich weg – stelle sicher, dass du ein Backup hast."
+  },
+  "importPassphrasePlaceholder": {
+    "message": "Passphrase (nur für ein ncryptsec-Backup nötig)"
+  },
+  "securityHeading": {
+    "message": "Sicherheit"
+  },
+  "secStatePlaintext": {
+    "message": "Der Schlüssel liegt unverschlüsselt in der Extension. Eine Passphrase schützt ihn im Speicher (NIP-49)."
+  },
+  "secStateUnlocked": {
+    "message": "Mit Passphrase verschlüsselt – entsperrt."
+  },
+  "secStateLocked": {
+    "message": "Gesperrt – zum Signieren, Verbinden oder Exportieren entsperren."
+  },
+  "secProtectHint": {
+    "message": "Verschlüsselt den Schlüssel im Extension-Speicher. Danach fragt die Extension bei jedem Browserstart und nach der Ruhezeit nach der Passphrase."
+  },
+  "secChangeHint": {
+    "message": "Passphrase ändern. Die Identität bleibt gleich; anschließend erscheint ein neues ncryptsec-Backup."
+  },
+  "newPassphrasePlaceholder": {
+    "message": "Neue Passphrase (mindestens 8 Zeichen)"
+  },
+  "repeatPassphrasePlaceholder": {
+    "message": "Passphrase wiederholen"
+  },
+  "unlockPassphrasePlaceholder": {
+    "message": "Passphrase"
+  },
+  "btnUnlock": {
+    "message": "Entsperren"
+  },
+  "btnProtect": {
+    "message": "Mit Passphrase verschlüsseln"
+  },
+  "btnChangePass": {
+    "message": "Passphrase ändern"
+  },
+  "btnUnprotect": {
+    "message": "Passphrasen-Schutz entfernen"
+  },
+  "confirmUnprotect": {
+    "message": "Passphrasen-Schutz wirklich entfernen? Der Schlüssel liegt dann wieder unverschlüsselt in der Extension."
+  },
+  "secAutoLock": {
+    "message": "Nach Inaktivität automatisch sperren"
+  },
+  "secIdleLabel": {
+    "message": "Minuten ohne Aktivität (1–240)"
+  },
+  "btnSaveSecurity": {
+    "message": "Speichern"
+  },
+  "btnLockNow": {
+    "message": "Jetzt sperren"
+  },
+  "secSaved": {
+    "message": "Gespeichert."
+  },
+  "backupHeading": {
+    "message": "Passphrase-Backup (ncryptsec)"
+  },
+  "backupHint": {
+    "message": "Bewahre dieses ncryptsec sicher auf (Papier, Passwortmanager). Zusammen mit der Passphrase entsperrt es die Identität – ohne es ist die Identität bei vergessener Passphrase verloren."
+  },
+  "btnCopyBackup": {
+    "message": "ncryptsec kopieren"
+  },
+  "errorLocked": {
+    "message": "Der Signer ist gesperrt – öffne das Grunq-Signer-Popup und entsperre ihn."
+  },
+  "errorWrongPassword": {
+    "message": "Falsche Passphrase."
+  },
+  "errorWeakPassword": {
+    "message": "Die Passphrase braucht mindestens 8 Zeichen."
+  },
+  "errorPasswordMismatch": {
+    "message": "Die beiden Passphrasen stimmen nicht überein."
+  },
+  "btnQr": {
+    "message": "QR-Code / Export"
+  },
+  "qrNpubHeading": {
+    "message": "Öffentlicher Schlüssel (npub)"
+  },
+  "qrNpubHint": {
+    "message": "Unbedenklich weiterzugeben: Mit dem QR-Code lässt sich die Identität z. B. aufs Handy übertragen oder in einem anderen Client lokal hinterlegen."
+  },
+  "qrRenderError": {
+    "message": "QR-Code ließ sich nicht erzeugen – kopiere stattdessen den Text."
+  },
+  "qrNsecHeading": {
+    "message": "Geheimer Schlüssel (nsec)"
+  },
+  "qrNsecWarn": {
+    "message": "Der nsec ist deine vollständige Identität: Wer ihn liest oder abscannt, kann in deinem Namen signieren und entschlüsseln. Kameras, Screenshots und Mitlesende zählen mit."
+  },
+  "btnShowNsec": {
+    "message": "Geheimen Schlüssel anzeigen"
+  },
+  "qrNsecConfirm": {
+    "message": "Schlüssel wirklich anzeigen? Stelle sicher, dass niemand auf deinen Bildschirm sieht und dass du ein Backup hast. Wenn du ihn aufs Handy übertragen hast, lösche die Identität hier, falls du sie im Browser nicht mehr brauchst."
+  },
+  "btnShowNsecConfirm": {
+    "message": "Ja, nsec anzeigen"
+  },
+  "btnCancel": {
+    "message": "Abbrechen"
+  },
+  "btnHide": {
+    "message": "Ausblenden"
+  },
+  "btnCopyNsec": {
+    "message": "nsec kopieren"
+  },
+  "qrNsecScanHint": {
+    "message": "Mit einer Signer-App auf dem Handy scannen (NIP-46-Client, z. B. Amber oder nsec.app) oder den nsec dort von Hand importieren."
+  },
+  "approvalsHeading": {
+    "message": "Website-Freigaben"
+  },
+  "noApprovals": {
+    "message": "Noch keine Freigaben."
+  },
+  "btnRevoke": {
+    "message": "Entfernen"
+  },
+  "popupHint": {
+    "message": "Websites mit Freigabe erhalten window.nostr (NIP-07). Jede Signatur bestätigst du im Extra-Fenster."
+  },
+  "bunkerHeading": {
+    "message": "Bunker-Verbindungen"
+  },
+  "bunkerHint": {
+    "message": "Andere Geräte oder Programme dürfen diese Identität über Nostr-Relays nutzen (NIP-46) – dein Schlüssel bleibt dabei in der Extension. Füge die Einladungs-URI im verbindenden Programm ein, z. B. im Grunq-Dashboard unter „Identität verbinden“."
+  },
+  "btnInvite": {
+    "message": "Einladung erzeugen"
+  },
+  "btnCopyUri": {
+    "message": "URI kopieren"
+  },
+  "inviteExpires": {
+    "message": "Die Einladung bleibt gültig, bis sie gekoppelt oder entfernt wird. Verbindungen kannst du hier jederzeit aufheben."
+  },
+  "noSessions": {
+    "message": "Noch keine Verbindungen."
+  },
+  "sessionWaiting": {
+    "message": "wartet auf Verbindung …"
+  },
+  "relaysHeading": {
+    "message": "Relays"
+  },
+  "relaysHint": {
+    "message": "Ein Relay pro Zeile (wss://…). Genutzt für Bunker-Einladungen und NIP-07-Meldungen an Apps. Das Grunq-Bootstrap-Relay ist Default; alles läuft auch mit eigenen Relays."
+  },
+  "btnRelaysSave": {
+    "message": "Relays speichern"
+  },
+  "relaysSaved": {
+    "message": "Relays gespeichert."
+  },
+  "nip46ErrorSessionLimit": {
+    "message": "Verbindungslimit erreicht (16). Bitte zuerst eine alte Verbindung entfernen."
+  },
+  "nip46ErrorNoRelays": {
+    "message": "Keine Relays konfiguriert – oben mindestens ein Relay eintragen."
+  },
+  "errorNoKey": {
+    "message": "Keine Identität eingerichtet – bitte zuerst die Extension öffnen und einen Schlüssel hinterlegen."
+  },
+  "errorDenied": {
+    "message": "Die Website hat keinen Zugriff erhalten."
+  },
+  "errorInvalidInput": {
+    "message": "Ungültige Anfrage."
+  },
+  "errorNoPermission": {
+    "message": "Für diese Aktion fehlt die Freigabe."
+  },
+  "errorInternal": {
+    "message": "Interner Fehler."
+  },
   "errorUnknownMethod": {
     "message": "Unbekannte Methode: $METHOD$",
-    "placeholders": { "method": { "content": "$1" } }
+    "placeholders": {
+      "method": {
+        "content": "$1"
+      }
+    }
   },
-  "timeout": { "message": "Zeitüberschreitung beim Warten auf die Signer-Extension" },
-  "titleLoading": { "message": "Freigabe anfragen…" },
-  "titleAccess": { "message": "Website-Zugriff auf window.nostr" },
-  "titleSign": { "message": "Event signieren?" },
-  "titleStale": { "message": "Anfrage veraltet" },
-  "staleText": { "message": "Diese Anfrage existiert nicht mehr (veraltet oder bereits entschieden)." },
+  "timeout": {
+    "message": "Zeitüberschreitung beim Warten auf die Signer-Extension"
+  },
+  "titleLoading": {
+    "message": "Freigabe anfragen…"
+  },
+  "titleAccess": {
+    "message": "Website-Zugriff auf window.nostr"
+  },
+  "titleSign": {
+    "message": "Event signieren?"
+  },
+  "titleStale": {
+    "message": "Anfrage veraltet"
+  },
+  "staleText": {
+    "message": "Diese Anfrage existiert nicht mehr (veraltet oder bereits entschieden)."
+  },
   "accessIntro": {
     "message": "Die Website $ORIGIN$ möchte window.nostr nutzen.\n\nDamit kann sie deinen öffentlichen Schlüssel lesen und dich um Signaturen sowie verschlüsselte Nachrichten (NIP-04/NIP-44) bitten. Jede Signatur wird separat bestätigt.",
-    "placeholders": { "origin": { "content": "$1" } }
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
   },
   "signIntro": {
     "message": "Die Website $ORIGIN$ möchte folgendes Event mit deiner Identität signieren:",
-    "placeholders": { "origin": { "content": "$1" } }
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
   },
   "eventMeta": {
     "message": "Website: $ORIGIN$\nArt (kind): $KIND$\nZeit: $TIME$\nTags: $TAGS$",
     "placeholders": {
-      "origin": { "content": "$1" },
-      "kind": { "content": "$2" },
-      "time": { "content": "$3" },
-      "tags": { "content": "$4" }
+      "origin": {
+        "content": "$1"
+      },
+      "kind": {
+        "content": "$2"
+      },
+      "time": {
+        "content": "$3"
+      },
+      "tags": {
+        "content": "$4"
+      }
     }
   },
   "eventMetaNip46": {
     "message": "Client: $ORIGIN$\nArt (kind): $KIND$\nZeit: $TIME$\nTags: $TAGS$",
     "placeholders": {
-      "origin": { "content": "$1" },
-      "kind": { "content": "$2" },
-      "time": { "content": "$3" },
-      "tags": { "content": "$4" }
+      "origin": {
+        "content": "$1"
+      },
+      "kind": {
+        "content": "$2"
+      },
+      "time": {
+        "content": "$3"
+      },
+      "tags": {
+        "content": "$4"
+      }
     }
   },
-  "btnAllow": { "message": "Zulassen" },
-  "btnAlways": { "message": "Immer zulassen" },
-  "btnDeny": { "message": "Ablehnen" },
-  "btnSign": { "message": "Signieren" },
+  "btnAllow": {
+    "message": "Zulassen"
+  },
+  "btnAlways": {
+    "message": "Immer zulassen"
+  },
+  "btnDeny": {
+    "message": "Ablehnen"
+  },
+  "btnSign": {
+    "message": "Signieren"
+  },
   "btnAlwaysSignKind": {
     "message": "Kind $KIND$ immer zulassen",
-    "placeholders": { "kind": { "content": "$1" } }
+    "placeholders": {
+      "kind": {
+        "content": "$1"
+      }
+    }
   },
   "btnAlwaysSignKindOrigin": {
     "message": "Kind $KIND$ von $ORIGIN$ immer zulassen",
     "placeholders": {
-      "kind": { "content": "$1" },
-      "origin": { "content": "$2" }
+      "kind": {
+        "content": "$1"
+      },
+      "origin": {
+        "content": "$2"
+      }
     }
   },
   "permSignKinds": {
     "message": "Signieren ohne Nachfrage: Kind $KINDS$",
-    "placeholders": { "kinds": { "content": "$1" } }
+    "placeholders": {
+      "kinds": {
+        "content": "$1"
+      }
+    }
   },
-  "decisionSaved": { "message": "Entscheidung gespeichert – dieses Fenster kann geschlossen werden." },
-  "titleNip46Sign": { "message": "Event für ein verbundenes Programm signieren?" },
+  "decisionSaved": {
+    "message": "Entscheidung gespeichert – dieses Fenster kann geschlossen werden."
+  },
+  "titleNip46Sign": {
+    "message": "Event für ein verbundenes Programm signieren?"
+  },
   "nip46SignIntro": {
     "message": "Das verbundene Programm $CLIENT$ möchte folgendes Event mit deiner Identität signieren:",
-    "placeholders": { "client": { "content": "$1" } }
+    "placeholders": {
+      "client": {
+        "content": "$1"
+      }
+    }
   },
-  "titleNip46NostrConnect": { "message": "Kopplung erlauben?" },
+  "titleNip46NostrConnect": {
+    "message": "Kopplung erlauben?"
+  },
   "nip46NostrConnectIntro": {
     "message": "Das Programm $CLIENT$ ($NPUB$) möchte sich als NIP-46-Client mit dieser Identität verbinden.\n\nQuelle: $ORIGIN$\nRelays: $RELAYS$\n\nNach der Freigabe bestätigt die Extension die Kopplung gegenüber dem Programm.",
     "placeholders": {
-      "client": { "content": "$1" },
-      "npub": { "content": "$2" },
-      "origin": { "content": "$3" },
-      "relays": { "content": "$4" }
+      "client": {
+        "content": "$1"
+      },
+      "npub": {
+        "content": "$2"
+      },
+      "origin": {
+        "content": "$3"
+      },
+      "relays": {
+        "content": "$4"
+      }
     }
   },
-  "titleNip46Connect": { "message": "Verbindung erlauben?" },
+  "titleNip46Connect": {
+    "message": "Verbindung erlauben?"
+  },
   "nip46ConnectIntro": {
     "message": "Das Programm $CLIENT$ ($NPUB$) möchte sich ohne Secret verbinden – das ist nach einem Neustart des Clients normal. Erlauben?",
     "placeholders": {
-      "client": { "content": "$1" },
-      "npub": { "content": "$2" }
+      "client": {
+        "content": "$1"
+      },
+      "npub": {
+        "content": "$2"
+      }
     }
   },
-  "titleNip46Decrypt": { "message": "Nachricht entschlüsseln?" },
+  "titleNip46Decrypt": {
+    "message": "Nachricht entschlüsseln?"
+  },
   "nip46DecryptIntro": {
     "message": "Das Programm $CLIENT$ möchte eine verschlüsselte Nachricht entschlüsseln.\n\nVerfahren: $SCHEME$\nGegenstelle: $PEER$\n\nInhalt (Anfang): $PAYLOAD$",
     "placeholders": {
-      "client": { "content": "$1" },
-      "scheme": { "content": "$2" },
-      "peer": { "content": "$3" },
-      "payload": { "content": "$4" }
+      "client": {
+        "content": "$1"
+      },
+      "scheme": {
+        "content": "$2"
+      },
+      "peer": {
+        "content": "$3"
+      },
+      "payload": {
+        "content": "$4"
+      }
     }
   },
-  "errorPairBusy": { "message": "Es läuft bereits eine Kopplung – bitte kurz warten." },
-  "nip46ErrorDenied": { "message": "Kopplung oder Aktion abgelehnt." }
+  "errorPairBusy": {
+    "message": "Es läuft bereits eine Kopplung – bitte kurz warten."
+  },
+  "nip46ErrorDenied": {
+    "message": "Kopplung oder Aktion abgelehnt."
+  }
 }

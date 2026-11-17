@@ -30,6 +30,7 @@ function resetExport() {
   show(el('nsec-confirm'), false);
   show(el('nsec-unlocked'), false);
   show(el('qr-empty'), false);
+  hideBackup();
 }
 
 // The background answers failures as { error: { code, message } } (messages
@@ -54,9 +55,10 @@ async function refresh() {
   show(el('view-import'), !state.hasKey);
   show(el('view-identity'), state.hasKey);
   if (state.hasKey) {
-    el('npub').textContent = state.identity.npub;
-    const pub = state.identity.pubkey;
-    el('pubkey-short').textContent = pub.slice(0, 16) + '…' + pub.slice(-12);
+    const identity = state.identity ?? {};
+    el('npub').textContent = identity.npub ?? '';
+    const pub = identity.pubkey ?? '';
+    el('pubkey-short').textContent = pub ? pub.slice(0, 16) + '…' + pub.slice(-12) : '';
     const list = el('approvals');
     list.textContent = '';
     show(el('no-approvals'), state.approvals.length === 0);
@@ -101,8 +103,125 @@ async function refresh() {
       li.append(label, btn);
       sessions.append(li);
     }
+    renderSecurity(state);
   }
 }
+
+// ---------- security card (passphrase + auto-lock) ----------
+
+function renderSecurity(state) {
+  const encrypted = !!state.encrypted;
+  const locked = state.hasKey && encrypted && !state.unlocked;
+  const stateEl = el('sec-state');
+  stateEl.textContent = locked
+    ? t('secStateLocked')
+    : encrypted
+      ? t('secStateUnlocked')
+      : t('secStatePlaintext');
+  stateEl.className = 'hint ' + (locked ? 'locked' : encrypted ? 'ok' : '');
+  show(el('sec-unlock'), locked);
+  show(el('sec-passphrase'), !locked);
+  el('sec-passphrase-hint').textContent = encrypted ? t('secChangeHint') : t('secProtectHint');
+  el('btn-protect').textContent = encrypted ? t('btnChangePass') : t('btnProtect');
+  show(el('sec-options'), encrypted && !locked);
+  if (encrypted && !locked) {
+    el('idle-minutes').value = String(state.security?.idleMinutes ?? 30);
+    el('auto-lock').checked = state.security?.autoLock !== false;
+  }
+}
+
+function showBackup(ncryptsec) {
+  el('backup-value').value = ncryptsec;
+  show(el('backup-box'), true);
+  showQr('qr-backup', ncryptsec);
+}
+
+function hideBackup() {
+  el('backup-value').value = '';
+  el('qr-backup').removeAttribute('src');
+  show(el('backup-box'), false);
+}
+
+function secError(e) {
+  const errEl = el('sec-error');
+  errEl.textContent = e?.message?.replace(/^Error: /, '') || String(e);
+  show(errEl, true);
+}
+
+el('btn-unlock').addEventListener('click', async () => {
+  el('sec-error').hidden = true;
+  try {
+    await send({ action: 'unlock', password: el('unlock-password').value });
+    el('unlock-password').value = '';
+    resetExport();
+    await refresh();
+  } catch (e) {
+    secError(e);
+  }
+});
+
+el('btn-protect').addEventListener('click', async () => {
+  el('sec-error').hidden = true;
+  try {
+    const res = await send({
+      action: 'protect',
+      password: el('new-password').value,
+      repeat: el('new-password-repeat').value,
+    });
+    el('new-password').value = '';
+    el('new-password-repeat').value = '';
+    await refresh();
+    if (res?.ncryptsec) showBackup(res.ncryptsec);
+  } catch (e) {
+    secError(e);
+  }
+});
+
+el('btn-lock').addEventListener('click', async () => {
+  el('sec-error').hidden = true;
+  try {
+    await send({ action: 'lock' });
+    resetExport();
+    await refresh();
+  } catch (e) {
+    secError(e);
+  }
+});
+
+el('btn-unprotect').addEventListener('click', async () => {
+  el('sec-error').hidden = true;
+  if (!confirm(t('confirmUnprotect'))) return;
+  try {
+    await send({ action: 'unprotect' });
+    hideBackup();
+    await refresh();
+  } catch (e) {
+    secError(e);
+  }
+});
+
+el('btn-security-save').addEventListener('click', async () => {
+  const status = el('sec-saved');
+  el('sec-error').hidden = true;
+  try {
+    const security = await send({
+      action: 'security.set',
+      idleMinutes: Number(el('idle-minutes').value),
+      autoLock: el('auto-lock').checked,
+    });
+    el('idle-minutes').value = String(security.idleMinutes);
+    el('auto-lock').checked = security.autoLock !== false;
+    status.textContent = t('secSaved');
+    show(status, true);
+    setTimeout(() => show(status, false), 2000);
+  } catch (e) {
+    secError(e);
+  }
+});
+
+el('btn-backup-copy').addEventListener('click', async () => {
+  await copyKey(el('backup-value').value, el('btn-backup-copy'), 'btnCopyBackup');
+});
 
 function shortPub(pub) {
   return typeof pub === 'string' && pub.length >= 16
@@ -121,8 +240,13 @@ el('btn-import').addEventListener('click', async () => {
   const errEl = el('import-error');
   errEl.hidden = true;
   try {
-    await send({ action: 'import', input: el('key-input').value });
+    await send({
+      action: 'import',
+      input: el('key-input').value,
+      passphrase: el('key-passphrase').value,
+    });
     el('key-input').value = '';
+    el('key-passphrase').value = '';
     resetExport();
     await refresh();
   } catch (e) {

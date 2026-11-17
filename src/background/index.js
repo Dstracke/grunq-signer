@@ -2,14 +2,7 @@
 // Handles NIP-07 RPCs from content scripts, origin permissions, approval
 // dialogs, identity storage AND the NIP-46 remote signer (bunker) sessions
 // over relays. UI/error language follows the browser settings via i18n.
-import {
-  derivePubkeyHex,
-  encodeNpub,
-  encodeNsec,
-  finalizeEvent,
-  parseSecretInput,
-  randomIdentity,
-} from '../lib/keys.js';
+import { derivePubkeyHex, encodeNpub, finalizeEvent } from '../lib/keys.js';
 import {
   nip04Decrypt,
   nip04Encrypt,
@@ -17,7 +10,12 @@ import {
   nip44Encrypt,
 } from '../lib/signing.js';
 import { RelayPool } from '../lib/relay-pool.js';
-import { createSignerCore, SETTINGS_STORE, SESSIONS_STORE } from '../signer/core.js';
+import {
+  createSignerCore,
+  defaultSettings,
+  SETTINGS_STORE,
+} from '../signer/core.js';
+import { createKeystore } from '../signer/keystore.js';
 
 const api = globalThis.browser ?? globalThis.chrome;
 
@@ -27,16 +25,16 @@ function t(key, subs) {
 }
 
 const STORE = {
-  KEY: 'grunq_signer:key', // { privHex, created }
-  IDENTITY: 'grunq_signer:identity', // { pubkey, created }
   PERMISSIONS: 'grunq_signer:permissions', // { [origin]: { nip07: true, ts } }
-  SESSIONS: SESSIONS_STORE, // [ { secret, relays, clientPub, ... } ]
-  SETTINGS: SETTINGS_STORE, // { relays: [...], idleMinutes }
 };
 
 function err(code) {
   const map = {
     no_key: 'errorNoKey',
+    locked: 'errorLocked',
+    wrong_password: 'errorWrongPassword',
+    weak_password: 'errorWeakPassword',
+    password_mismatch: 'errorPasswordMismatch',
     denied: 'errorDenied',
     invalid_input: 'errorInvalidInput',
     no_permission: 'errorNoPermission',
@@ -62,8 +60,30 @@ async function removeStore(key) {
   return api.storage.local.remove(key);
 }
 
+// Extension session storage is memory-backed: the decrypted key survives
+// event-page sleep but never touches disk and is gone after a browser
+// restart. Where the browser lacks it (tests, old engines), a module-level
+// map provides the same semantics for the running background instance.
+const memorySession = new Map();
+const sessionStore = api.storage?.session
+  ? {
+      get: async (key) => (await api.storage.session.get(key))[key],
+      set: (key, value) => api.storage.session.set({ [key]: value }),
+      remove: (key) => api.storage.session.remove(key),
+    }
+  : {
+      get: async (key) => memorySession.get(key),
+      set: async (key, value) => memorySession.set(key, value),
+      remove: async (key) => memorySession.delete(key),
+    };
+
+const keystore = createKeystore({
+  local: { get: getStore, set: setStore, remove: removeStore },
+  session: sessionStore,
+});
+
 async function hasIdentity() {
-  return (await getStore(STORE.KEY)) != null;
+  return (await keystore.status()).hasKey;
 }
 
 // ---------- approval windows ----------
@@ -153,20 +173,55 @@ const signerCore = createSignerCore({
   },
   transport: new RelayPool(),
   requestApproval,
-  signerPrivHex: async () => (await getStore(STORE.KEY))?.privHex,
+  signerPrivHex: () => keystore.privateKeyHex(),
+  onActivity: () => keystore.touch().catch(() => {}),
   log: (...args) => console.log('[nip46]', ...args),
 });
 
 let signerBooted = false;
 
+// Encrypted identities start locked: subscribing and signing both need the
+// key, so the signer waits for the popup unlock (the Grunq node in turn waits
+// for the signer — same behaviour as a sleeping signer phone).
 async function bootSigner() {
   if (signerBooted) return;
-  if (!(await hasIdentity())) return;
+  const status = await keystore.status();
+  if (!status.hasKey || !status.unlocked) return;
   signerBooted = true;
   await signerCore.start().catch((e) => {
     console.log('[nip46] start failed', e);
     signerBooted = false;
   });
+}
+
+async function stopSigner() {
+  if (!signerBooted) return;
+  signerBooted = false;
+  await signerCore.stop().catch(() => {});
+}
+
+async function securitySettings() {
+  const settings = await defaultSettings({ get: getStore });
+  return { idleMinutes: settings.idleMinutes, autoLock: settings.autoLock !== false };
+}
+
+// Keepalive tick: prune invitations, reconnect, and drop the in-memory key
+// after the configured idle time. Signer traffic counts as activity (the
+// keystore touches the session on every request), so a running stream never
+// locks itself out; a quiet browser does.
+async function runKeepalive() {
+  const status = await keystore.status();
+  if (!status.hasKey) return;
+  const settings = await defaultSettings({ get: getStore });
+  if (status.encrypted && status.unlocked && settings.autoLock !== false) {
+    if (await keystore.autoLockIfIdle(settings.idleMinutes)) {
+      console.log('[signer] auto-locked after idle');
+      await stopSigner();
+      return;
+    }
+  }
+  if (signerBooted) signerCore.tick().catch((e) => console.log('[nip46] tick failed', e));
+  await bootSigner();
 }
 
 // Event pages start fresh on browser start and (re)install; the top-level
@@ -184,9 +239,8 @@ const KEEPALIVE_ALARM = 'grunq-signer-keepalive';
 try {
   api.alarms?.create?.(KEEPALIVE_ALARM, { periodInMinutes: 1 });
   api.alarms?.onAlarm?.addListener?.((alarm) => {
-    if (alarm?.name === KEEPALIVE_ALARM && signerBooted) {
-      signerCore.tick().catch((e) => console.log('[nip46] tick failed', e));
-      bootSigner();
+    if (alarm?.name === KEEPALIVE_ALARM) {
+      runKeepalive().catch((e) => console.log('[signer] keepalive failed', e));
     }
   });
 } catch {
@@ -212,12 +266,17 @@ async function handleRpc(msg, sender) {
     throw err('no_permission');
   }
   const { method, params = {} } = msg;
-  if (!(await hasIdentity())) throw err('no_key');
+  const status = await keystore.status();
+  if (!status.hasKey) throw err('no_key');
+  // Encrypted identities must be unlocked before a site may do anything;
+  // the popup shows the unlock field, the site gets a friendly error.
+  if (status.encrypted && !status.unlocked) throw err('locked');
 
   switch (method) {
     case 'getPublicKey': {
       await requireOriginPermission(origin);
-      const { privHex } = await getStore(STORE.KEY);
+      const privHex = await keystore.privateKeyHex();
+      await keystore.touch();
       // NIP-07: resolve with the hex pubkey string directly.
       return derivePubkeyHex(privHex);
     }
@@ -240,14 +299,16 @@ async function handleRpc(msg, sender) {
           throw err('denied');
         }
       }
-      const { privHex } = await getStore(STORE.KEY);
+      const privHex = await keystore.privateKeyHex();
+      await keystore.touch();
       // NIP-07: resolve with the signed event object directly.
       return finalizeEvent(privHex, event);
     }
 
     case 'nip04.encrypt': {
       await requireOriginPermission(origin);
-      const { privHex } = await getStore(STORE.KEY);
+      const privHex = await keystore.privateKeyHex();
+      await keystore.touch();
       const { pubkey, text } = params;
       if (!is64Hex(pubkey) || typeof text !== 'string') throw err('invalid_input');
       // NIP-07: resolve with the ciphertext string directly.
@@ -256,7 +317,8 @@ async function handleRpc(msg, sender) {
 
     case 'nip04.decrypt': {
       await requireOriginPermission(origin);
-      const { privHex } = await getStore(STORE.KEY);
+      const privHex = await keystore.privateKeyHex();
+      await keystore.touch();
       const { pubkey, payload } = params;
       if (!is64Hex(pubkey) || typeof payload !== 'string') throw err('invalid_input');
       return await nip04Decrypt(privHex, pubkey, payload);
@@ -264,7 +326,8 @@ async function handleRpc(msg, sender) {
 
     case 'nip44.encrypt': {
       await requireOriginPermission(origin);
-      const { privHex } = await getStore(STORE.KEY);
+      const privHex = await keystore.privateKeyHex();
+      await keystore.touch();
       const { pubkey, text } = params;
       if (!is64Hex(pubkey) || typeof text !== 'string') throw err('invalid_input');
       return nip44Encrypt(privHex, pubkey, text);
@@ -272,7 +335,8 @@ async function handleRpc(msg, sender) {
 
     case 'nip44.decrypt': {
       await requireOriginPermission(origin);
-      const { privHex } = await getStore(STORE.KEY);
+      const privHex = await keystore.privateKeyHex();
+      await keystore.touch();
       const { pubkey, payload } = params;
       if (!is64Hex(pubkey) || typeof payload !== 'string') throw err('invalid_input');
       return nip44Decrypt(privHex, pubkey, payload);
@@ -297,7 +361,9 @@ async function handleWebNostrConnect(msg, sender) {
   if (typeof msg.uri !== 'string' || !msg.uri.startsWith('nostrconnect:')) {
     throw err('invalid_input');
   }
-  if (!(await hasIdentity())) throw err('no_key');
+  const status = await keystore.status();
+  if (!status.hasKey) throw err('no_key');
+  if (status.encrypted && !status.unlocked) throw err('locked');
   if (webPairBusy) throw { code: 'busy', message: t('errorPairBusy') };
   webPairBusy = true;
   try {
@@ -320,49 +386,68 @@ async function handleWebNostrConnect(msg, sender) {
 
 // ---------- popup messages ----------
 
+// Signer-core errors carry NIP-46 codes; translate the ones a popup can hit.
+function popupError(e) {
+  if (e?.code && e?.nip46Code === e.code) {
+    const map = {
+      locked: 'errorLocked',
+      session_limit: 'nip46ErrorSessionLimit',
+      no_relays: 'nip46ErrorNoRelays',
+      unauthorized: 'nip46ErrorDenied',
+      invalid_request: 'errorInvalidInput',
+    };
+    throw { code: e.code, message: t(map[e.code] ?? 'errorInternal') };
+  }
+  throw e;
+}
+
 async function handlePopup(msg) {
   switch (msg.action) {
     case 'state': {
-      const key = await getStore(STORE.KEY);
+      const status = await keystore.status();
+      const pubkey = status.hasKey ? await keystore.pubkeyHex() : null;
       const perms = (await getStore(STORE.PERMISSIONS)) ?? {};
-      const [sessions, relays] = await Promise.all([
-        key ? signerCore.listSessions().catch(() => []) : Promise.resolve([]),
+      const [sessions, relays, security] = await Promise.all([
+        status.hasKey ? signerCore.listSessions().catch(() => []) : Promise.resolve([]),
         signerCore.getRelaySettings().catch(() => ({ relays: [] })),
+        securitySettings(),
       ]);
       return {
-        hasKey: !!key,
-        identity: key
-          ? {
-              pubkey: derivePubkeyHex(key.privHex),
-              npub: encodeNpub(derivePubkeyHex(key.privHex)),
-              created: key.created,
-            }
+        hasKey: status.hasKey,
+        encrypted: status.encrypted,
+        unlocked: status.unlocked,
+        identity: pubkey
+          ? { pubkey, npub: encodeNpub(pubkey), created: status.created }
           : null,
         approvals: Object.entries(perms)
           .filter(([, v]) => v?.nip07)
           .map(([origin, v]) => ({ origin, ts: v.ts, signKinds: Array.isArray(v?.sign_kinds) ? v.sign_kinds : [] })),
         sessions,
         relays: relays.relays,
+        security,
       };
     }
 
+    // Plain nsec/hex key, or an ncryptsec backup that needs its passphrase.
     case 'import': {
-      const privHex = parseSecretInput(String(msg.input ?? ''));
-      await setStore(STORE.KEY, { privHex, created: Date.now() });
-      await setStore(STORE.IDENTITY, {
-        pubkey: derivePubkeyHex(privHex),
-        created: Date.now(),
-      });
+      const input = String(msg.input ?? '').trim();
+      // Restart the signer so subscriptions follow the new identity.
+      await stopSigner();
+      if (/^ncryptsec1/i.test(input)) {
+        const res = await keystore.importNcryptsec(input, String(msg.passphrase ?? ''));
+        await bootSigner();
+        return res;
+      }
+      const res = await keystore.importSecret(input);
       await bootSigner();
-      return { ok: true };
+      return res;
     }
 
     case 'generate': {
-      const id = randomIdentity();
-      await setStore(STORE.KEY, { privHex: id.privHex, created: Date.now() });
-      await setStore(STORE.IDENTITY, { pubkey: id.pubkeyHex, created: Date.now() });
+      await stopSigner();
+      const res = await keystore.generate();
       await bootSigner();
-      return { ok: true };
+      return res;
     }
 
     // Identity export for migration to a phone/program: the popup asks for
@@ -370,19 +455,53 @@ async function handlePopup(msg) {
     // sits in the UI until the user asked. The npub comes from `state`.
     case 'export': {
       if (msg.what !== 'nsec') throw err('invalid_input');
-      if (msg.confirm !== true) throw err('denied');
-      const key = await getStore(STORE.KEY);
-      if (!key) throw err('no_key');
-      return { nsec: encodeNsec(key.privHex) };
+      return await keystore.exportNsec(msg.confirm === true);
+    }
+
+    /** Stored ncryptsec backup (for keeping it on paper/another device). */
+    case 'export-backup': {
+      const res = await keystore.exportNcryptsec();
+      if (!res) throw err('invalid_input');
+      return res;
+    }
+
+    // ---------- lock / passphrase ----------
+
+    case 'unlock': {
+      const res = await keystore.unlock(String(msg.password ?? ''));
+      await bootSigner();
+      return res;
+    }
+
+    case 'lock': {
+      await keystore.lock();
+      await stopSigner();
+      return { ok: true };
+    }
+
+    case 'protect':
+    case 'change-passphrase': {
+      const res = await keystore.protect(String(msg.password ?? ''), String(msg.repeat ?? ''));
+      return res;
+    }
+
+    case 'unprotect': {
+      await keystore.unprotect();
+      return { ok: true };
+    }
+
+    case 'security.set': {
+      const settings = await defaultSettings({ get: getStore });
+      const idle = Number(msg.idleMinutes);
+      settings.idleMinutes = Number.isFinite(idle) ? Math.min(240, Math.max(1, Math.round(idle))) : 30;
+      settings.autoLock = msg.autoLock !== false;
+      await setStore(SETTINGS_STORE, settings);
+      return await securitySettings();
     }
 
     case 'remove': {
-      await removeStore(STORE.KEY);
-      await removeStore(STORE.IDENTITY);
-      if (signerBooted) {
-        signerBooted = false;
-        await signerCore.stop();
-      }
+      await keystore.remove();
+      await stopSigner();
       return { ok: true };
     }
 
@@ -396,8 +515,12 @@ async function handlePopup(msg) {
     // ---------- NIP-46 (bunker) ----------
 
     case 'nip46.invite': {
-      await bootSigner();
-      return await signerCore.createInvite();
+      try {
+        await bootSigner();
+        return await signerCore.createInvite();
+      } catch (e) {
+        popupError(e);
+      }
     }
 
     case 'nip46.sessions': {

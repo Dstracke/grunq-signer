@@ -27,8 +27,11 @@ keepalive alarm, test-suite end-to-end against a real relay with a mini
 NIP-46 client. M3 started: `nostrconnect://` pairing from web pages,
 per-kind sign approvals and the decrypt gate are done, plus **identity
 export as QR** (npub public, nsec behind a two-step confirmation) to move
-an identity onto a phone. Still open from M3: audit log, ncryptsec at-rest
-encryption, auto-lock, profile editor.
+an identity onto a phone. **Passphrase protection (NIP-49) and auto-lock
+are implemented**: the popup encrypts the key with a passphrase
+(`ncryptsec`), keeps only the session key in memory, locks automatically
+after the configured idle time and exports the `ncryptsec` as a backup QR.
+Still open from M3: audit log, profile editor, options page.
 
 The full specification lives in
 [`docs/browser-extension-spec.md`](docs/browser-extension-spec.md)
@@ -91,6 +94,24 @@ showing the warning — the nsec. Both codes are generated locally with the
 bundled `qrcode-generator`; nothing is sent anywhere. Scan the nsec code with
 a signer app on the phone (NIP-46 client) or import the string there by hand.
 The secret is dropped from the popup as soon as the panel is collapsed.
+
+### Passphrase protection and auto-lock
+
+The **Security** card encrypts the stored key with a passphrase (NIP-49,
+`ncryptsec`: scrypt + XChaCha20-Poly1305). The decrypted key then lives only
+in `storage.session` (memory) and is gone after a browser restart; the
+passphrase itself is never stored. The card also exports the `ncryptsec` as
+a copyable string and QR code — keep that backup somewhere safe, it is the
+only way back if the passphrase is forgotten.
+
+With protection enabled the signer locks after the configured idle time
+(default 30 minutes, adjustable, `autoLock` can be switched off). Real
+NIP-07/NIP-46 traffic counts as activity, so a running stream keeps itself
+unlocked while an idle browser locks. A locked signer answers `error:locked`,
+the NIP-46 subscriptions pause (a Grunq node simply waits, like with a
+sleeping signer phone) and the popup only shows the unlock field. An
+`ncryptsec` backup can be imported as the identity — the import field asks
+for its passphrase.
 
 ## Related projects
 
