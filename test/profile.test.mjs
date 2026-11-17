@@ -61,7 +61,7 @@ function setup() {
 
 test('profile: sanitize keeps known fields, trims and caps lengths', () => {
   const clean = sanitizeProfile({
-    name: '  luku  ',
+    name: '  alice  ',
     display_name: 'Nostr Fan',
     about: 'x'.repeat(5000),
     picture: 'https://example.org/a.png',
@@ -72,7 +72,7 @@ test('profile: sanitize keeps known fields, trims and caps lengths', () => {
     extra: 42,
   });
   assert.deepEqual(Object.keys(clean), ['name', 'display_name', 'about', 'picture', 'nip05', 'lud16']);
-  assert.equal(clean.name, 'luku');
+  assert.equal(clean.name, 'alice');
   assert.equal(clean.about.length, PROFILE_FIELDS.about);
   assert.equal(clean.website, undefined);
   assert.deepEqual(sanitizeProfile(null), {});
