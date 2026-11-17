@@ -9,7 +9,7 @@ default/fallback, German bundled).
 | Field | Value |
 |---|---|
 | Name | Grunq Signer |
-| Version | see `package.json` / `dist/manifest.json` |
+| Version | 1.0.0 (`package.json` / `dist/manifest.json`) |
 | Summary (≤ 132 chars) | Nostr identity in your browser: NIP-07 provider and NIP-46 signer. Keys stay local, encrypted at rest, no account. |
 | Category | Firefox: *Other* (or *Security & Privacy*) · Chrome: *Productivity* → *Developer Tools* is wrong; use *Productivity* |
 | License | AGPL-3.0 |
@@ -62,19 +62,43 @@ Grunq Signer is free software (AGPL-3.0) and works with any Nostr app or
 client; it is not tied to the Grunq node.
 ```
 
-## Screenshot checklist (1280×800 or 640×400; Chrome needs ≥ 1)
+## Screenshots (ready to upload)
 
-1. Popup with an identity and the “Security” card (passphrase/auto-lock).
-2. Options page: identities + profile.
-3. Approval dialog for a signature (origin, event kind, preview).
-4. QR export panel (npub/nsec) — the secret blurred or hidden.
-5. Audit log with a few entries.
+All five are 1280×800 PNG (Chrome accepts 1280×800 or 640×400; AMO takes
+these as-is), English UI, no user data:
+
+| File | Shows |
+|---|---|
+| `store/screenshots/01-settings-identities.png` | Options page: identities with the active label + profile editor |
+| `store/screenshots/02-popup.png` | Popup: identity, npub, QR/export button, passphrase + auto-lock |
+| `store/screenshots/03-sign-approval.png` | Approval window: client, kind, time, content preview, Sign/Always/Deny |
+| `store/screenshots/04-qr-export.png` | QR export: npub code, secret key behind the confirmation |
+| `store/screenshots/05-audit-log.png` | Audit log with allowed/denied requests |
+
+They were rendered from the real built UI (stubbed background data, no
+secrets). Regenerate after UI changes with the same 1280×800 viewport.
+
+## Before submitting – manual end-to-end check with the Grunq node
+
+1. Load the built extension in Zen/Firefox (`about:debugging` → *Load
+   Temporary Add-on* → `dist/manifest.json`) and create/import an identity.
+2. In the Grunq node dashboard open the identity panel and click
+   **“Mit Signer-Extension koppeln”**; the extension shows its pairing
+   dialog (client name, npub, relays, source = page origin). Allow.
+3. The dashboard confirms the pairing; restart the node with the stored
+   `bunker://` URI (no secret) — the extension asks once more (secretless
+   reconnect) and then signs.
+4. Trigger a signature in the node (e.g. publish the stream announcement),
+   check the options page → audit log for the entry.
+5. Lock the extension (popup → “Lock now”): the node's next request must
+   fail with `error:locked` and succeed again after unlocking.
 
 ## Submission notes
 
-- Firefox (AMO): `npm run build` then `npm run lint`; zip the **contents of
-  `dist/`** (manifest at the zip root) or upload `dist/` as the source with
-  `web-ext build`. The add-on id is `signer@grunq.com`; the signing key of the
+- Build the artifact: `npm run build && npm run package` →
+  `web-ext-artifacts/grunq_signer-1.0.0.zip` (manifest at the zip root).
+- Firefox (AMO): `npm run lint` first, then upload that zip (or the same
+  build as source for the reviewer). The add-on id is `signer@grunq.com`; the signing key of the
   AMO account must stay stable so the id keeps working for self-distribution.
 - Chrome Web Store: upload a zip of `dist/` contents; add the privacy policy
   URL from the table above; declare *no data collected*.

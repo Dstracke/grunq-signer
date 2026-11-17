@@ -1,6 +1,6 @@
 {
   "name": "grunq-signer",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Grunq Signer - Nostr browser extension (NIP-07 provider, NIP-46 signer in M2)",
   "type": "module",
@@ -8,7 +8,8 @@
     "build": "node build.mjs",
     "test": "node --test test/crypto.test.mjs test/nip46.test.mjs test/relay-pool.test.mjs test/qr.test.mjs test/nip49.test.mjs test/keystore.test.mjs test/profile.test.mjs test/audit.test.mjs test/background.test.mjs test/i18n.test.mjs",
     "i18n:check": "node --test test/i18n.test.mjs",
-    "lint": "npx --yes web-ext lint --source-dir=dist"
+    "lint": "npx --yes web-ext lint --source-dir=dist",
+    "package": "npx --yes web-ext build --source-dir=dist --artifacts-dir=web-ext-artifacts --overwrite-dest"
   },
   "dependencies": {
     "@noble/ciphers": "^2.0.1",

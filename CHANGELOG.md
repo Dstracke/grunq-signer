@@ -1,0 +1,49 @@
+# Changelog
+
+All notable changes to Grunq Signer. Format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the project uses
+semantic versioning.
+
+## [1.0.0] – 2026-11-17
+
+First public release. A browser extension that is both a NIP-07 provider
+(`window.nostr`) and a NIP-46 remote signer (bunker).
+
+### Added
+
+- **NIP-07 provider** for approved sites: `getPublicKey`, `signEvent`,
+  `nip04.encrypt/decrypt`, `nip44.encrypt/decrypt`, `getRelays`; per-origin
+  approvals with a confirmation window that always shows the site origin.
+- **NIP-46 signer**: `bunker://` invitations, `nostrconnect://` pairing
+  (including pairing deep links from web pages), session registry with
+  revocation, `sign_event` approvals, per-kind permissions, decrypt gate,
+  `ping`/`get_public_key`/`get_relays`/`switch_relays`, reconnect-on-wake
+  via keepalive alarm.
+- **NIP-49 passphrase protection** (`ncryptsec`, scrypt +
+  XChaCha20-Poly1305): the decrypted key lives in memory only and is gone
+  after a browser restart; export of the `ncryptsec` backup (text + QR).
+- **Auto-lock** after inactivity (configurable, can be disabled); real
+  NIP-07/NIP-46 traffic counts as activity.
+- **Multiple identities** with labels, per-identity NIP-46 sessions and
+  profile; switching restarts the signer with the new key.
+- **Public profile editor** (kind 0: name, display_name, about, picture,
+  nip05, lud16) with publishing to the configured relays, loading back and
+  NIP-09 deletion; re-publishes on start to relays that lost the profile.
+- **QR export** of npub (public) and nsec (behind an explicit two-step
+  confirmation) to move an identity to a phone.
+- **Audit log** of the last answered requests (method, client, time,
+  result) with per-source filtering; no message contents.
+- **Options page** for identities, profile, pairing, relays, approvals
+  (per-kind revoke), bunker sessions and the audit log.
+- Localization follows the browser language, English is the
+  default/fallback locale, German is bundled; locale parity is enforced by
+  tests.
+- Bundled `qrcode-generator` (MIT) for locally rendered QR codes.
+
+### Security
+
+- Content scripts never see key material; pages receive signed results only.
+- Decryption requires a per-request confirmation; unknown NIP-46 clients
+  need an explicit approval, secretless reconnects included.
+- No telemetry, no account, no cloud; the only network traffic goes to the
+  relays the user configures.

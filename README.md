@@ -29,27 +29,25 @@ has an empty message or an undeclared `$PLACEHOLDER$`.
 
 ## Status
 
-Spec phase, **M1 (NIP-07 core) implemented and verified**: key
-import/generation, `window.nostr` injection with per-origin approvals,
-per-sign confirmation dialogs, NIP-04/NIP-44 encrypt/decrypt, developer
-test page. **M2 (NIP-46 signer) implemented**: relay pool over plain
-WebSockets, `bunker://` invitations (popup), session registry with
-revocation, `sign_event` confirmation dialog, reconnect-on-wake via
-keepalive alarm, test-suite end-to-end against a real relay with a mini
-NIP-46 client. M3 started: `nostrconnect://` pairing from web pages,
-per-kind sign approvals and the decrypt gate are done, plus **identity
-export as QR** (npub public, nsec behind a two-step confirmation) to move
-an identity onto a phone. **Multiple identities with switching**,
-**passphrase protection (NIP-49)** and **auto-lock** are implemented: the popup encrypts the key with a passphrase
-(`ncryptsec`), keeps only the session key in memory, locks automatically
-after the configured idle time and exports the `ncryptsec` as a backup QR.
-The **options page** (extension settings, "Settings" in the popup) holds the
-identity list, the profile editor, pairing, the relay list, site approvals
-with per-kind revoke, bunker sessions and an **audit log** of the last
-answered requests. The profile is **re-published on start** to relays that
-lost it ("Check relays" forces the repair). **Multiple identities** (e.g.
-streamer + chat) can live side by side; the active one is what sites and
-bunker clients see.
+**Version 1.0.0 – first public release.** A browser extension that is both a
+NIP-07 provider (`window.nostr`) and a NIP-46 remote signer (bunker).
+
+- **NIP-07**: approved sites get `window.nostr`; every signature is confirmed
+  with the site origin, remembered event kinds are configurable per site.
+- **NIP-46**: `bunker://` invitations, `nostrconnect://` pairing (including
+  deep links and the Grunq node handshake), session registry with revocation,
+  per-kind permissions and a decrypt gate.
+- **Key protection**: optional NIP-49 passphrase encryption (`ncryptsec`),
+  keys in memory only, auto-lock after inactivity, QR export of npub/nsec,
+  `ncryptsec` backup.
+- **Multiple identities** with per-identity sessions and profile; public
+  kind-0 profile editor with relay publishing and NIP-09 deletion.
+- **Audit log**, options page, de/en UI following the browser language.
+
+`npm run package` produces the store artifact
+(`web-ext-artifacts/grunq_signer-1.0.0.zip`); listing copy, screenshots and
+submission notes live in [`docs/store-listing.md`](docs/store-listing.md).
+Changes are listed in [`CHANGELOG.md`](CHANGELOG.md).
 
 The full specification lives in
 [`docs/browser-extension-spec.md`](docs/browser-extension-spec.md)
