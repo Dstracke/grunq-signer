@@ -62,11 +62,11 @@ function setup() {
 test('profile: sanitize keeps known fields, trims and caps lengths', () => {
   const clean = sanitizeProfile({
     name: '  luku  ',
-    display_name: 'Luku',
+    display_name: 'Nostr Fan',
     about: 'x'.repeat(5000),
     picture: 'https://example.org/a.png',
-    nip05: 'luku@grunq.com',
-    lud16: 'luku@getalby.com',
+    nip05: 'name@example.com',
+    lud16: 'name@wallet.example',
     website: 'https://ignored.example',
     bot: true,
     extra: 42,
@@ -82,7 +82,7 @@ test('profile: sanitize keeps known fields, trims and caps lengths', () => {
 test('profile: publish signs a kind 0 and stores event id + fields', async () => {
   const { id, service, storage, transport, sign } = setup();
   const res = await service.publish(
-    { name: 'luku', display_name: 'Luku', about: 'Streaming auf Grunq', lud16: 'luku@getalby.com' },
+    { name: 'nostr', display_name: 'Nostr Fan', about: 'streaming notes', lud16: 'name@wallet.example' },
     ['wss://relay.grunq.com'],
     sign,
   );
@@ -92,15 +92,15 @@ test('profile: publish signs a kind 0 and stores event id + fields', async () =>
   assert.equal(sent.event.kind, 0);
   assert.equal(sent.event.pubkey, derivePubkeyHex(id.privHex));
   assert.deepEqual(JSON.parse(sent.event.content), {
-    name: 'luku',
-    display_name: 'Luku',
-    about: 'Streaming auf Grunq',
-    lud16: 'luku@getalby.com',
+    name: 'nostr',
+    display_name: 'Nostr Fan',
+    about: 'streaming notes',
+    lud16: 'name@wallet.example',
   });
   const stored = storage.map.get(PROFILE_STORE);
   assert.equal(stored.eventId, res.eventId);
   assert.equal(stored.publishedAt, 1_700_000_000_000);
-  assert.deepEqual((await service.load()).fields.name, 'luku');
+  assert.deepEqual((await service.load()).fields.name, 'nostr');
 });
 
 test('profile: publish rejects empty profiles and missing relays', async () => {
@@ -114,8 +114,8 @@ test('profile: a failed publish keeps the locally saved fields', async () => {
   const broken = async () => {
     throw new Error('no relay accepted the event');
   };
-  await assert.rejects(service.publish({ name: 'luku' }, ['wss://relay'], broken), /no relay/);
-  assert.deepEqual(storage.map.get(PROFILE_STORE).fields, { name: 'luku' });
+  await assert.rejects(service.publish({ name: 'nostr' }, ['wss://relay'], broken), /no relay/);
+  assert.deepEqual(storage.map.get(PROFILE_STORE).fields, { name: 'nostr' });
   assert.equal(storage.map.get(PROFILE_STORE).eventId, undefined);
 });
 
@@ -150,7 +150,7 @@ test('profile: fetchLatest resolves null when nothing arrives', async () => {
 test('profile: delete publishes NIP-09 with e and a tags and clears the store', async () => {
   const { id, service, storage, transport, sign } = setup();
   const me = derivePubkeyHex(id.privHex);
-  const { eventId } = await service.publish({ name: 'luku' }, ['wss://relay'], sign);
+  const { eventId } = await service.publish({ name: 'nostr' }, ['wss://relay'], sign);
   await service.remove(me, ['wss://relay'], sign);
   const del = transport.publishes.at(-1).event;
   assert.equal(del.kind, 5);
@@ -160,7 +160,7 @@ test('profile: delete publishes NIP-09 with e and a tags and clears the store', 
 });
 
 test('profile: planRepublish names only the relays missing the profile', () => {
-  const local = { fields: { name: 'luku' }, publishedAt: 1_700_000_000_000 };
+  const local = { fields: { name: 'nostr' }, publishedAt: 1_700_000_000_000 };
   const perRelay = [
     { relay: 'wss://a', present: true },
     { relay: 'wss://b', present: false },

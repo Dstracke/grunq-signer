@@ -67,9 +67,10 @@ npm test        # crypto + NIP-46 tests (E2E block runs against a real relay)
 ```
 
 The NIP-46 end-to-end test pairs a mini client (same wire protocol as the
-Grunq node) against the signer core over `ws://archserver:7777` by
-default — override with `RELAY_WS=...`, skip with an unreachable relay,
-force with `FORCE_E2E=1`.
+Grunq node) against the signer core over a real relay — by default
+`ws://localhost:7777` (a local nostr-rs-relay). Override with
+`RELAY_WS=wss://…`; the block is skipped when the relay is unreachable,
+`FORCE_E2E=1` turns failures into errors.
 
 Install from `dist/` until the store listings are live (see
 [`docs/store-listing.md`](docs/store-listing.md)):
@@ -184,12 +185,10 @@ for its passphrase.
 
 ## Related projects
 
-- **Grunq node** (decentralized live streaming client in Go; this extension
-  is its browser identity extension):
-  `ssh://luku@192.168.0.99/home/luku/projekte/grunq.git`
-- **Ideas repository** (roadmap; the extension idea is GQ-37):
-  `ssh://luku@192.168.0.99/home/luku/projekte/ideen.git`
-  (`grunq/GQ-37-browser-signer-extension.md`)
+- **Grunq node** — the decentralized live-streaming client (Go) that this
+  extension is the browser identity for: <https://grunq.com>
+- The extension's design background lives in the specification next to this
+  README ([`docs/browser-extension-spec.md`](docs/browser-extension-spec.md)).
 
 ## License
 

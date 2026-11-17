@@ -582,7 +582,7 @@ test('core: denied nip44_decrypt returns error without leaking plaintext', async
 
 // ---------- E2E against a real relay ----------
 
-const RELAY_WS = process.env.RELAY_WS ?? 'ws://archserver:7777';
+const RELAY_WS = process.env.RELAY_WS ?? 'ws://localhost:7777';
 
 async function relayReachable(url, timeoutMs = 5000) {
   return await new Promise((resolve) => {

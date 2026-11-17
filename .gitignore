@@ -7,3 +7,10 @@ web-ext-artifacts/
 *.xpi
 .env
 *.log
+
+# Agent/tooling scratch (never part of the extension)
+.opencode/
+opencode.json
+.claude/
+.aider*
+.cursor/

@@ -1,12 +1,10 @@
 # Spec: Grunq Signer — Browser-Extension (NIP-07 + NIP-46)
 
 Status: Entwurf (GQ-37) · 14.11.2026 · Repo: `grunq-signer`
-(`ssh://luku@192.168.0.99/home/luku/projekte/grunq-signer.git`)
+(https://github.com/Dstracke/grunq-signer)
 
-Schwesterprojekt des **Grunq-Knotens**
-(`ssh://luku@192.168.0.99/home/luku/projekte/grunq.git`); Idee und
-Hintergrund: GQ-37 im Ideen-Repo
-(`ssh://luku@192.168.0.99/home/luku/projekte/ideen.git`).
+Schwesterprojekt des **Grunq-Knotens** (dezentraler Live-Streaming-Client,
+https://grunq.com); Idee und Hintergrund: GQ-37 (Roadmap).
 
 ## 1. Überblick
 
