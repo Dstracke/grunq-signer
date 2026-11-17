@@ -1,0 +1,24 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Build (dist/)
+        run: npm run build
+      - name: Tests (crypto, NIP-46, NIP-49, keystore, background, i18n)
+        run: npm test
+      - name: Lint the built extension (web-ext)
+        run: npm run lint

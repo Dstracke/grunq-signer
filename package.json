@@ -7,7 +7,8 @@
   "scripts": {
     "build": "node build.mjs",
     "test": "node --test test/crypto.test.mjs test/nip46.test.mjs test/relay-pool.test.mjs test/qr.test.mjs test/nip49.test.mjs test/keystore.test.mjs test/profile.test.mjs test/audit.test.mjs test/background.test.mjs test/i18n.test.mjs",
-    "i18n:check": "node --test test/i18n.test.mjs"
+    "i18n:check": "node --test test/i18n.test.mjs",
+    "lint": "npx --yes web-ext lint --source-dir=dist"
   },
   "dependencies": {
     "@noble/ciphers": "^2.0.1",
@@ -16,5 +17,15 @@
   },
   "devDependencies": {
     "esbuild": "^0.25.0"
+  },
+  "homepage": "https://grunq.com/grunq-signer/",
+  "author": "Dominik Stracke <contact@grunq.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Dstracke/grunq-signer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Dstracke/grunq-signer/issues",
+    "email": "contact@grunq.com"
   }
 }

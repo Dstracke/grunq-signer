@@ -5,6 +5,10 @@ Browser extension as a Nostr identity source: a **NIP-07 provider**
 clients — turning the desktop browser into a signer app: the nsec lives in the
 extension's storage and never leaves the extension background.
 
+Website: **https://grunq.com/grunq-signer/** · Source:
+**https://github.com/Dstracke/grunq-signer** · Contact:
+**contact@grunq.com**
+
 First-class target is **Firefox/Gecko** (and thereby the Zen browser);
 Chromium runs through the same code path. The default connect relay is the
 Grunq bootstrap relay `wss://relay.grunq.com` (editable, no cloud
@@ -67,12 +71,17 @@ Grunq node) against the signer core over `ws://archserver:7777` by
 default — override with `RELAY_WS=...`, skip with an unreachable relay,
 force with `FORCE_E2E=1`.
 
-Load the built extension from `dist/`:
+Install from `dist/` until the store listings are live (see
+[`docs/store-listing.md`](docs/store-listing.md)):
 
 - **Firefox/Zen:** `about:debugging#/runtime/this-firefox` → *Load Temporary
   Add-on…* → pick `dist/manifest.json`.
 - **Chromium:** `chrome://extensions` → enable developer mode → *Load
   unpacked* → pick the `dist/` directory.
+
+`npm run lint` checks the built extension with `web-ext`; CI
+(`.github/workflows/ci.yml`) runs build, tests and the lint step on every
+push.
 
 ### Testing the NIP-07 surface
 
@@ -163,6 +172,15 @@ the NIP-46 subscriptions pause (a Grunq node simply waits, like with a
 sleeping signer phone) and the popup only shows the unlock field. An
 `ncryptsec` backup can be imported as the identity — the import field asks
 for its passphrase.
+
+## Contact and links
+
+- Landing page (store listing target): <https://grunq.com/grunq-signer/>
+- Privacy policy: <https://grunq.com/grunq-signer/privacy.html>
+  (German: <https://grunq.com/grunq-signer/datenschutz.html>)
+- E-mail: <contact@grunq.com> — for security reports please read
+  [`SECURITY.md`](SECURITY.md) first.
+- Source: <https://github.com/Dstracke/grunq-signer>
 
 ## Related projects
 
