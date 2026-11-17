@@ -5,6 +5,7 @@
 import {
   derivePubkeyHex,
   encodeNpub,
+  encodeNsec,
   finalizeEvent,
   parseSecretInput,
   randomIdentity,
@@ -362,6 +363,17 @@ async function handlePopup(msg) {
       await setStore(STORE.IDENTITY, { pubkey: id.pubkeyHex, created: Date.now() });
       await bootSigner();
       return { ok: true };
+    }
+
+    // Identity export for migration to a phone/program: the popup asks for
+    // the nsec only after its explicit two-step warning, so the secret never
+    // sits in the UI until the user asked. The npub comes from `state`.
+    case 'export': {
+      if (msg.what !== 'nsec') throw err('invalid_input');
+      if (msg.confirm !== true) throw err('denied');
+      const key = await getStore(STORE.KEY);
+      if (!key) throw err('no_key');
+      return { nsec: encodeNsec(key.privHex) };
     }
 
     case 'remove': {

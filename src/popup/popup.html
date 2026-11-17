@@ -29,7 +29,48 @@
       <p id="pubkey-short" class="muted mono">…</p>
       <div class="row">
         <button id="btn-copy" data-i18n="btnCopy"></button>
+        <button id="btn-qr" data-i18n="btnQr"></button>
+      </div>
+      <div class="row">
         <button id="btn-remove" class="danger" data-i18n="btnRemove"></button>
+      </div>
+
+      <div id="export-box" hidden>
+        <h3 data-i18n="qrNpubHeading"></h3>
+        <p class="hint" data-i18n="qrNpubHint"></p>
+        <div class="qr-wrap">
+          <img id="qr-npub" class="qr" alt="npub">
+        </div>
+        <p class="muted center" id="qr-empty" hidden data-i18n="qrRenderError"></p>
+
+        <hr class="sep">
+
+        <h3 class="danger-text" data-i18n="qrNsecHeading"></h3>
+        <p class="hint warn" data-i18n="qrNsecWarn"></p>
+        <div id="nsec-locked">
+          <div class="row">
+            <button id="btn-nsec-show" class="danger" data-i18n="btnShowNsec"></button>
+          </div>
+        </div>
+        <div id="nsec-confirm" hidden>
+          <p class="hint warn" data-i18n="qrNsecConfirm"></p>
+          <div class="row">
+            <button id="btn-nsec-confirm" class="danger" data-i18n="btnShowNsecConfirm"></button>
+            <button id="btn-nsec-cancel" data-i18n="btnCancel"></button>
+          </div>
+        </div>
+        <div id="nsec-unlocked" hidden>
+          <p id="nsec" class="npub nsec">…</p>
+          <div class="qr-wrap">
+            <img id="qr-nsec" class="qr" alt="nsec">
+          </div>
+          <p class="hint" data-i18n="qrNsecScanHint"></p>
+          <div class="row">
+            <button id="btn-nsec-copy" data-i18n="btnCopyNsec"></button>
+            <button id="btn-nsec-hide" data-i18n="btnHide"></button>
+          </div>
+        </div>
+        <p id="export-error" class="error" hidden></p>
       </div>
     </section>
 

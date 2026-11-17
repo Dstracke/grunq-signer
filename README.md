@@ -24,9 +24,11 @@ test page. **M2 (NIP-46 signer) implemented**: relay pool over plain
 WebSockets, `bunker://` invitations (popup), session registry with
 revocation, `sign_event` confirmation dialog, reconnect-on-wake via
 keepalive alarm, test-suite end-to-end against a real relay with a mini
-NIP-46 client. Planned for M3: `nostrconnect://` pairing UI, kinds
-whitelists, audit log, ncryptsec at-rest encryption, auto-lock, profile
-editor.
+NIP-46 client. M3 started: `nostrconnect://` pairing from web pages,
+per-kind sign approvals and the decrypt gate are done, plus **identity
+export as QR** (npub public, nsec behind a two-step confirmation) to move
+an identity onto a phone. Still open from M3: audit log, ncryptsec at-rest
+encryption, auto-lock, profile editor.
 
 The full specification lives in
 [`docs/browser-extension-spec.md`](docs/browser-extension-spec.md)
@@ -81,6 +83,15 @@ Every incoming `sign_event` opens a confirmation dialog showing the
 connecting client and the event preview. Background wake-ups reconnect the
 relay subscriptions automatically (keepalive alarm, one minute).
 
+### Moving an identity with the QR codes
+
+The identity card has a **QR code / export** button: it shows the npub as a
+QR code (public, safe to share) and — after an explicit second confirmation
+showing the warning — the nsec. Both codes are generated locally with the
+bundled `qrcode-generator`; nothing is sent anywhere. Scan the nsec code with
+a signer app on the phone (NIP-46 client) or import the string there by hand.
+The secret is dropped from the popup as soon as the panel is collapsed.
+
 ## Related projects
 
 - **Grunq node** (decentralized live streaming client in Go; this extension
@@ -103,3 +114,7 @@ Exceptions:
   in the Grunq repository (`THIRD_PARTY_NOTICES.md`).
 - **noble libraries** (`@noble/curves`, `@noble/hashes`, `@noble/ciphers`,
   MIT) are bundled into the build; see their upstream repositories.
+- **qrcode-generator** (`src/vendor/qrcode-generator.cjs`, MIT, Copyright
+  (c) 2009 Kazuhiko Arase, <https://github.com/kazuhikoarase/qrcode-generator>)
+  renders the identity QR codes in the popup; the file is shipped unchanged
+  (same file the Grunq node serves as `web/static/js/qrcode-generator.js`).

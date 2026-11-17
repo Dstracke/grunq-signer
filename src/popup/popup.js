@@ -1,5 +1,9 @@
-// Popup: identity management (import/generate/remove) and site approvals.
+// Popup: identity management (import/generate/remove/export) and site approvals.
 // All labels come from _locales/<ui-lang>/messages.json (browser setting).
+// The identity QR codes are rendered locally with the bundled qrcode-generator
+// (MIT, see README); the bech32 strings never leave the popup.
+import qrcode from '../vendor/qrcode-generator.cjs';
+
 const api = globalThis.browser ?? globalThis.chrome;
 
 const el = (id) => document.getElementById(id);
@@ -15,8 +19,30 @@ function initI18n() {
   }
 }
 
-function send(msg) {
-  return api.runtime.sendMessage({ type: 'popup', ...msg });
+// Collapse the export panel and drop any rendered secret (called whenever the
+// identity changes: import, generate, remove).
+function resetExport() {
+  el('nsec').textContent = '';
+  el('qr-nsec').removeAttribute('src');
+  el('qr-npub').removeAttribute('src');
+  show(el('export-box'), false);
+  show(el('nsec-locked'), true);
+  show(el('nsec-confirm'), false);
+  show(el('nsec-unlocked'), false);
+  show(el('qr-empty'), false);
+}
+
+// The background answers failures as { error: { code, message } } (messages
+// already localized there), so unwrap them into real exceptions — otherwise
+// the try/catch blocks below would silently swallow e.g. an invalid key.
+async function send(msg) {
+  const res = await api.runtime.sendMessage({ type: 'popup', ...msg });
+  if (res && typeof res === 'object' && res.error) {
+    const e = new Error(res.error.message || res.error.code || 'error');
+    e.code = res.error.code;
+    throw e;
+  }
+  return res;
 }
 
 function show(node, on) {
@@ -97,6 +123,7 @@ el('btn-import').addEventListener('click', async () => {
   try {
     await send({ action: 'import', input: el('key-input').value });
     el('key-input').value = '';
+    resetExport();
     await refresh();
   } catch (e) {
     errEl.textContent = e?.message?.replace(/^Error: /, '') || String(e);
@@ -109,6 +136,7 @@ el('btn-generate').addEventListener('click', async () => {
   errEl.hidden = true;
   try {
     await send({ action: 'generate' });
+    resetExport();
     await refresh();
   } catch (e) {
     errEl.textContent = e?.message?.replace(/^Error: /, '') || String(e);
@@ -117,14 +145,100 @@ el('btn-generate').addEventListener('click', async () => {
 });
 
 el('btn-copy').addEventListener('click', async () => {
-  await navigator.clipboard.writeText(el('npub').textContent);
-  el('btn-copy').textContent = t('btnCopied');
-  setTimeout(() => (el('btn-copy').textContent = t('btnCopy')), 1500);
+  await copyKey(el('npub').textContent, el('btn-copy'), 'btnCopy');
+});
+
+// ---------- identity export (npub/nsec QR) ----------
+
+function qrDataUrl(text) {
+  try {
+    const qr = qrcode(0, 'M'); // typeNumber 0 = pick automatically
+    qr.addData(String(text));
+    qr.make();
+    return qr.createDataURL(6, 2);
+  } catch {
+    return '';
+  }
+}
+
+function showQr(imgId, text) {
+  const img = el(imgId);
+  const url = qrDataUrl(text);
+  if (url) {
+    img.src = url;
+    show(img, true);
+  } else {
+    img.removeAttribute('src');
+    show(img, false);
+    show(el('qr-empty'), true);
+  }
+}
+
+// Wipe every trace of the secret from the popup DOM. The nsec is only
+// fetched on demand and dropped as soon as the panel closes.
+function lockNsec() {
+  el('nsec').textContent = '';
+  el('qr-nsec').removeAttribute('src');
+  show(el('nsec-confirm'), false);
+  show(el('nsec-unlocked'), false);
+  show(el('nsec-locked'), true);
+}
+
+async function copyKey(text, button, labelKey) {
+  await navigator.clipboard.writeText(text);
+  button.textContent = t('btnCopied');
+  setTimeout(() => (button.textContent = t(labelKey)), 1500);
+}
+
+el('btn-qr').addEventListener('click', async () => {
+  const box = el('export-box');
+  if (!box.hidden) {
+    lockNsec();
+    show(box, false);
+    return;
+  }
+  lockNsec();
+  show(el('qr-empty'), false);
+  showQr('qr-npub', el('npub').textContent);
+  show(box, true);
+});
+
+el('btn-nsec-show').addEventListener('click', () => {
+  show(el('nsec-locked'), false);
+  show(el('nsec-confirm'), true);
+});
+
+el('btn-nsec-cancel').addEventListener('click', lockNsec);
+
+el('btn-nsec-confirm').addEventListener('click', async () => {
+  const errEl = el('export-error');
+  errEl.hidden = true;
+  try {
+    const { nsec } = await send({ action: 'export', what: 'nsec', confirm: true });
+    el('nsec').textContent = nsec;
+    show(el('nsec-locked'), false);
+    show(el('nsec-confirm'), false);
+    show(el('nsec-unlocked'), true);
+    showQr('qr-nsec', nsec);
+  } catch (e) {
+    errEl.textContent = e?.message?.replace(/^Error: /, '') || String(e);
+    show(errEl, true);
+    lockNsec();
+  }
+});
+
+el('btn-nsec-hide').addEventListener('click', lockNsec);
+
+el('btn-nsec-copy').addEventListener('click', async () => {
+  const value = el('nsec').textContent;
+  if (!value) return;
+  await copyKey(value, el('btn-nsec-copy'), 'btnCopyNsec');
 });
 
 el('btn-remove').addEventListener('click', async () => {
   if (!confirm(t('confirmRemove'))) return;
   await send({ action: 'remove' });
+  resetExport();
   await refresh();
 });
 
@@ -166,4 +280,4 @@ el('btn-relays-save').addEventListener('click', async () => {
 });
 
 initI18n();
-refresh();
+refresh().catch((e) => console.log('[popup] refresh failed', e));

@@ -114,6 +114,17 @@ Adapter-Layer `bg-runtime` (API-Unterschiede: SW-Lifecycle siehe §5.2,
   geschnitten, Default bleibt „immer nachfragen".
 - Auto-Lock: nach `idle_minutes` (Standard 30, konfigurierbar) verlangt
   die Extension eine lokale Entsperrung (siehe §7), bevor signiert wird.
+- **Identität exportieren / QR (umgesetzt):** Das Popup hat neben
+  „npub kopieren" einen Knopf **„QR-Code / Export"**, der ein Panel mit
+  zwei QRs öffnet (lokal erzeugt mit der gebündelten MIT-Bibliothek
+  `qrcode-generator`, kein Netzzugriff — die Zeichenketten verlassen den
+  Popup nie): **npub** öffentlich, sofort sichtbar; **nsec** erst nach
+  einem zweiten, explizit bestätigten Schritt (Warnung + „Ja, nsec
+  anzeigen"). Der Background liefert den nsec nur auf die Popup-Aktion
+  `export` mit `confirm: true`, das Popup leert Text und QR beim
+  Einklappen, Ausblenden und bei Identitätswechsel wieder. Damit lässt
+  sich eine Identität per Scan in eine Signer-App aufs Handy übertragen
+  (Migration statt Multi-Geräte-Sync; §12 bleibt offen).
 - **Sprache:** Popup, Bestätigungsdialoge und Fehler folgen den
   Browsereinstellungen über die WebExtension-i18n-Mechanik (`_locales/`
   mit Deutsch + Englisch; Manifest-Texte via `__MSG_…__`,
@@ -235,7 +246,9 @@ grunq_signer:settings      idle_minutes, relays (global allowlist),
 - **Key at rest:** Stufe 1 Klartext-nsec im Extension-Storage ist Browser-
   Standard (wie NIP-07-Extensions); Empfehlung und Option: Import als
   NIP-49-`ncryptsec` + lokale Passphrase, Auto-Lock nach Idle. Export nur
-  über expliziten Dialog mit Bestätigung.
+  über expliziten Dialog mit Bestätigung — umgesetzt als QR-Panel mit
+  zweistufiger nsec-Freigabe (§4.2); der nsec verlässt den Background nur
+  auf diese eine, bestätigte Popup-Anfrage.
 - **Kein Key-Transfer via Content-Script:** der nsec verlässt den
   Background nie; Seiten sehen ausschließlich signierte Ergebnisse.
 - **Phishing:** NIP-07-Bestätigungen zeigen immer die volle Origin; im

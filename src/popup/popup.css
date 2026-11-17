@@ -239,3 +239,61 @@ textarea:focus {
   border-radius: 6px;
   padding: 0 4px;
 }
+
+/* ---------- identity export (npub/nsec QR) ---------- */
+
+#export-box {
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+#export-box h3 {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--muted);
+}
+
+#export-box h3.danger-text {
+  color: var(--danger);
+}
+
+.sep {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 14px 0;
+}
+
+.qr-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 10px 0;
+}
+
+/* The library emits a GIF data URL on a transparent background; the white
+   tile keeps the modules readable in dark mode and while scanning. */
+.qr {
+  width: 232px;
+  height: 232px;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  background: #fff;
+  image-rendering: pixelated;
+}
+
+.npub.nsec {
+  color: var(--pink);
+  background: var(--pink-soft);
+  border-color: rgba(255, 61, 129, 0.3);
+}
+
+.hint.warn {
+  color: #ffc04a;
+}
+
+.center {
+  text-align: center;
+}
