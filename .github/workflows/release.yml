@@ -1,0 +1,48 @@
+name: release
+
+# Tag push (v1.0.0, …) builds the store artifact and attaches it to a GitHub
+# release. The AMO/Chrome upload stays manual (store accounts).
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Test
+        run: npm test
+      - name: Lint (web-ext)
+        run: npm run lint
+      - name: Package store artifact
+        run: npm run package
+      - name: Checksum
+        run: sha256sum web-ext-artifacts/*.zip > web-ext-artifacts/SHA256SUMS.txt
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Grunq Signer ${{ github.ref_name }}
+          body: |
+            Store artifact for Grunq Signer ${{ github.ref_name }}.
+
+            - `grunq_signer-*.zip` – the built extension (manifest at the zip root),
+              ready for addons.mozilla.org and the Chrome Web Store.
+            - `SHA256SUMS.txt` – checksum of the artifact.
+            - `store/screenshots/` in the repository mirrors the listing images.
+          files: |
+            web-ext-artifacts/*.zip
+            web-ext-artifacts/SHA256SUMS.txt
+          draft: false
+          prerelease: false

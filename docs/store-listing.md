@@ -69,16 +69,20 @@ client; it is not tied to the Grunq node.
 
 ## Screenshots (ready to upload)
 
-All five are 1280×800 PNG (Chrome accepts 1280×800 or 640×400; AMO takes
-these as-is), English UI, no user data:
+Six 1280×800 PNGs (Chrome accepts 1280×800 or 640×400 and shows up to five;
+AMO takes all six), English UI, no user data. For Chrome use 01–04 + 06
+(the audit log is the least visual).
 
 | File | Shows |
 |---|---|
-| `store/screenshots/01-settings-identities.png` | Options page: identities with the active label + profile editor |
+| `store/screenshots/01-settings-identities.png` | Options page: identities with the active label + encrypted backup |
 | `store/screenshots/02-popup.png` | Popup: identity, npub, QR/export button, passphrase + auto-lock |
 | `store/screenshots/03-sign-approval.png` | Approval window: client, kind, time, content preview, Sign/Always/Deny |
 | `store/screenshots/04-qr-export.png` | QR export: npub code, secret key behind the confirmation |
 | `store/screenshots/05-audit-log.png` | Audit log with allowed/denied requests |
+| `store/screenshots/06-profile-preview.png` | Profile preview with verified NIP-05 and lightning address |
+
+Promo tile (Chrome "Small promo tile"): `store/promo-tile.png` (440×280).
 
 They were rendered from the real built UI (stubbed background data, no
 secrets). A German set with the same five shots lives in

@@ -18,7 +18,7 @@ npm run package   # -> web-ext-artifacts/grunq_signer-1.0.0.zip
 |---|---|
 | Datei | `web-ext-artifacts/grunq_signer-1.0.0.zip` |
 | Größe | 164 KB (30 Dateien, `manifest.json` im ZIP-Root) |
-| SHA-256 | `5e5e0be1821461fa61b40e0ea782e577e724da65b9ff03d39a26173aa52f872b` |
+| SHA-256 | `3e6a0fb5c6c73be47f58bed51602cfa61af1b7f96d6f278aae781e4ef6d89e75` |
 | Add-on-ID | `signer@grunq.com` |
 | Lizenz | AGPL-3.0 |
 | Datenschutz | https://grunq.com/grunq-signer/privacy.html (DE: `/datenschutz.html`) |
@@ -29,13 +29,16 @@ npm run package   # -> web-ext-artifacts/grunq_signer-1.0.0.zip
 ## Screenshots
 
 Alle 1280×800, englischer Satz in `store/screenshots/`, deutscher Satz in
-`store/screenshots/de/`:
+`store/screenshots/de/`; Promo-Tile 440×280 unter `store/promo-tile.png`:
 
-1. `01-settings-identities.png` – Options: Identitäten + Profil
+1. `01-settings-identities.png` – Options: Identitäten + verschlüsseltes Backup
 2. `02-popup.png` – Popup: Identität, QR, Passphrase/Auto-Lock
 3. `03-sign-approval.png` – Signatur-Bestätigung (Client, Kind, Inhalt)
 4. `04-qr-export.png` – QR-Export (npub offen, nsec hinter Bestätigung)
 5. `05-audit-log.png` – Audit-Log mit erlaubt/abgelehnt
+6. `06-profile-preview.png` – Profil-Vorschau (verifizierte NIP-05, ⚡-Adresse)
+
+Chrome zeigt max. 5 Bilder: 01–04 + 06 verwenden, Audit nur bei AMO.
 
 ## AMO (Firefox/Zen)
 

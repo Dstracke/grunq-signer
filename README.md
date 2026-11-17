@@ -84,7 +84,11 @@ Install from `dist/` until the store listings are live (see
 
 `npm run lint` checks the built extension with `web-ext`; CI
 (`.github/workflows/ci.yml`) runs build, tests and the lint step on every
-push.
+push. A tag push (`v1.0.0`, …) additionally builds the store ZIP and attaches
+it to the GitHub release (`.github/workflows/release.yml`).
+
+**Platforms:** Firefox and Chromium on the desktop (tested on Zen/Firefox);
+Firefox for Android is untested and not advertised in the store listing.
 
 ### Testing the NIP-07 surface
 
