@@ -77,15 +77,54 @@
         <input id="pf-name" class="field" type="text" spellcheck="false">
         <label class="flabel" for="pf-display-name" data-i18n="profileDisplayName"></label>
         <input id="pf-display-name" class="field" type="text" spellcheck="false">
-        <label class="flabel" for="pf-nip05" data-i18n="profileNip05"></label>
-        <input id="pf-nip05" class="field" type="text" spellcheck="false" placeholder="name@domain">
-        <label class="flabel" for="pf-lud16" data-i18n="profileLud16"></label>
-        <input id="pf-lud16" class="field" type="text" spellcheck="false" placeholder="name@wallet">
         <label class="flabel" for="pf-picture" data-i18n="profilePicture"></label>
         <input id="pf-picture" class="field" type="url" spellcheck="false" placeholder="https://…">
+        <label class="flabel" for="pf-banner" data-i18n="profileBanner"></label>
+        <input id="pf-banner" class="field" type="url" spellcheck="false" placeholder="https://…">
+        <label class="flabel" for="pf-website" data-i18n="profileWebsite"></label>
+        <input id="pf-website" class="field" type="url" spellcheck="false" placeholder="https://…">
+        <label class="flabel" for="pf-lud16" data-i18n="profileLud16"></label>
+        <div class="with-btn">
+          <input id="pf-lud16" class="field" type="text" spellcheck="false" placeholder="name@wallet">
+          <button id="btn-check-lud16" class="mini" data-i18n="btnCheck"></button>
+        </div>
       </div>
+
+      <p id="lud16-result" class="hint check-result" hidden></p>
+
+      <label class="flabel" for="pf-nip05" data-i18n="profileNip05"></label>
+      <div class="with-btn">
+        <input id="pf-nip05" class="field" type="text" spellcheck="false" placeholder="name@domain">
+        <button id="btn-check-nip05" class="mini" data-i18n="btnCheck"></button>
+      </div>
+      <p id="nip05-result" class="hint check-result" hidden></p>
       <label class="flabel" for="pf-about" data-i18n="profileAbout"></label>
       <textarea id="pf-about" rows="3" spellcheck="false"></textarea>
+
+      <label class="check">
+        <input type="checkbox" id="pf-bot">
+        <span data-i18n="profileBot"></span>
+      </label>
+
+      <h3 class="preview-heading" data-i18n="profilePreviewHeading"></h3>
+      <div id="profile-preview" class="profile-preview">
+        <div id="pp-banner" class="pp-banner"></div>
+        <div class="pp-body">
+          <img id="pp-avatar" class="pp-avatar" alt="">
+          <div class="pp-info">
+            <p class="pp-name"><strong id="pp-display"></strong>
+              <span id="pp-name" class="muted mono"></span></p>
+            <p class="pp-badges">
+              <span id="pp-nip05" class="chip ok" hidden></span>
+              <span id="pp-lud16" class="chip" hidden></span>
+              <span id="pp-bot" class="chip pending" hidden></span>
+            </p>
+            <p id="pp-about" class="small"></p>
+            <a id="pp-website" class="small" target="_blank" rel="noreferrer noopener" hidden></a>
+          </div>
+        </div>
+      </div>
+
       <div class="row">
         <button id="btn-profile-publish" class="primary" data-i18n="btnPublishProfile"></button>
         <button id="btn-profile-fetch" data-i18n="btnFetchProfile"></button>

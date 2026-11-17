@@ -18,6 +18,7 @@ import {
 } from '../signer/core.js';
 import { createKeystore, profileKey, sessionsKey } from '../signer/keystore.js';
 import { createProfileService, PROFILE_STORE, planRepublish } from '../signer/profile.js';
+import { createProfileChecks } from '../signer/profilechecks.js';
 import { createAuditLog } from '../signer/audit.js';
 import { createRateLimiter } from '../lib/ratelimit.js';
 
@@ -42,6 +43,7 @@ function err(code) {
     denied: 'errorDenied',
     rate_limited: 'errorRateLimited',
     invalid_backup: 'errorInvalidBackup',
+    invalid_url: 'errorInvalidUrl',
     invalid_input: 'errorInvalidInput',
     no_permission: 'errorNoPermission',
     internal: 'errorInternal',
@@ -150,6 +152,8 @@ const NIP07_AUDIT = new Set(['signEvent', 'nip04.decrypt', 'nip44.decrypt']);
 const PROFILE_CHECK_STORE = 'grunq_signer:profilecheck';
 const PROFILE_CHECK_MIN_MS = 60 * 60 * 1000;
 let profileCheckScheduled = false;
+
+const profileChecks = createProfileChecks();
 
 const profileService = createProfileService({
   storage: scopedStorage,
@@ -513,6 +517,7 @@ async function handleWebNostrConnect(msg, sender) {
         unauthorized: 'nip46ErrorDenied',
         rate_limited: 'errorRateLimited',
     invalid_backup: 'errorInvalidBackup',
+    invalid_url: 'errorInvalidUrl',
         invalid_request: 'errorInvalidInput',
       };
       throw { code: e.nip46Code, message: t(map[e.nip46Code] ?? 'errorInternal') };
@@ -532,6 +537,7 @@ function popupError(e) {
       locked: 'errorLocked',
       rate_limited: 'errorRateLimited',
     invalid_backup: 'errorInvalidBackup',
+    invalid_url: 'errorInvalidUrl',
       session_limit: 'nip46ErrorSessionLimit',
       no_relays: 'nip46ErrorNoRelays',
       unauthorized: 'nip46ErrorDenied',
@@ -616,21 +622,45 @@ async function handlePopup(msg) {
     case 'backup.export': {
       const status = await keystore.status();
       if (!status.hasKey) throw err('no_key');
-      return await keystore.exportBackup(String(msg.password ?? ''), String(msg.repeat ?? ''));
+      const identities = await keystore.list();
+      const profiles = {};
+      for (const item of identities) {
+        const rec = await getStore(profileKey(item.id));
+        if (rec?.fields && Object.keys(rec.fields).length > 0) profiles[item.pubkey] = rec;
+      }
+      return await keystore.exportBackup(
+        String(msg.password ?? ''),
+        String(msg.repeat ?? ''),
+        { profiles },
+      );
     }
 
     case 'backup.import': {
-      const status = await keystore.status();
-      if (!status.hasKey) {
-        // Importing into an empty store is fine, no key needed.
-      }
+      // Importing into an empty store is fine, no key needed.
       await stopSigner();
       signerCore.reset();
       const res = await keystore.importBackup(String(msg.text ?? ''), String(msg.password ?? ''), {
         replace: msg.replace === true,
       });
+      // Profiles travel with the backup (keyed by pubkey); only fill gaps so a
+      // locally edited profile is never overwritten by an older backup.
+      let profilesRestored = 0;
+      for (const item of await keystore.list()) {
+        const saved = res.profiles?.[item.pubkey];
+        if (!saved || typeof saved.fields !== 'object') continue;
+        const key = profileKey(item.id);
+        const existing = await getStore(key);
+        if (existing?.fields && Object.keys(existing.fields).length > 0) continue;
+        await setStore(key, {
+          fields: saved.fields,
+          eventId: null,
+          publishedAt: Number.isFinite(saved.publishedAt) ? saved.publishedAt : null,
+          updatedAt: Date.now(),
+        });
+        profilesRestored += 1;
+      }
       await bootSigner();
-      return res;
+      return { ...res, profilesRestored };
     }
 
     case 'identity.remove': {
@@ -684,9 +714,11 @@ async function handlePopup(msg) {
         await keystore.touch();
         return { ...res, relays };
       } catch (e) {
-        if (e?.code) throw e.code === 'empty_profile'
-          ? { code: 'empty_profile', message: t('profileEmpty') }
-          : e;
+        if (e?.code === 'empty_profile') throw { code: 'empty_profile', message: t('profileEmpty') };
+        if (e?.code === 'invalid_url') {
+          throw { code: 'invalid_url', message: t('errorInvalidUrl', [(e.fields ?? []).join(', ')]) };
+        }
+        if (e?.code) throw e;
         throw { code: 'publish_failed', message: t('profilePublishFailed', [String(e?.message ?? e)]) };
       }
     }
@@ -741,6 +773,21 @@ async function handlePopup(msg) {
       perms[origin] = { ...perms[origin], sign_kinds: kinds };
       await setStore(STORE.PERMISSIONS, perms);
       return { ok: true, signKinds: kinds };
+    }
+
+    // On-demand verification of the human-readable profile fields.
+    case 'profile.check-lud16': {
+      return await profileChecks.checkLud16(String(msg.address ?? ''));
+    }
+
+    case 'profile.check-nip05': {
+      const pubkey = await keystore.pubkeyHex();
+      if (!pubkey) throw err('no_key');
+      return await profileChecks.checkNip05(
+        String(msg.address ?? ''),
+        pubkey,
+        { force: msg.force === true },
+      );
     }
 
     // Manual repair pull ("check relays") for the options page.

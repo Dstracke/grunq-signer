@@ -1,6 +1,7 @@
 // Options page: profile, relays, site approvals (with per-kind revoke),
 // bunker sessions and the audit log. Everything talks to the background over
 // the same popup message channel; no key material is handled here.
+import { isValidHttpUrl, profileFieldErrors } from '../signer/profile.js';
 const api = globalThis.browser ?? globalThis.chrome;
 
 const el = (id) => document.getElementById(id);
@@ -267,8 +268,13 @@ async function refreshProfile() {
   el('pf-display-name').value = fields.display_name ?? '';
   el('pf-about').value = fields.about ?? '';
   el('pf-picture').value = fields.picture ?? '';
+  el('pf-banner').value = fields.banner ?? '';
+  el('pf-website').value = fields.website ?? '';
   el('pf-nip05').value = fields.nip05 ?? '';
   el('pf-lud16').value = fields.lud16 ?? '';
+  el('pf-bot').checked = fields.bot === true;
+  resetChecks();
+  renderPreview();
   const chip = el('profile-state');
   const published = !!profileData.publishedAt;
   chip.textContent = published ? t('profilePublishedChip') : t('profileDraftChip');
@@ -284,16 +290,189 @@ function readProfileForm() {
     display_name: el('pf-display-name').value,
     about: el('pf-about').value,
     picture: el('pf-picture').value,
+    banner: el('pf-banner').value,
+    website: el('pf-website').value,
     nip05: el('pf-nip05').value,
     lud16: el('pf-lud16').value,
+    bot: el('pf-bot').checked,
   };
 }
+
+// ---------- profile preview ----------
+
+let nip05Check = null;
+let lud16Check = null;
+
+function resetChecks() {
+  nip05Check = null;
+  lud16Check = null;
+  show(el('nip05-result'), false);
+  show(el('lud16-result'), false);
+}
+
+function renderPreview() {
+  const fields = readProfileForm();
+  const display = el('pf-display-name').value.trim();
+  const name = el('pf-name').value.trim();
+  el('pp-display').textContent = display || name || t('profilePreviewEmpty');
+  el('pp-name').textContent = name ? `@${name}` : '';
+
+  const avatar = el('pf-picture').value.trim();
+  if (isValidHttpUrl(avatar)) {
+    if (el('pp-avatar').getAttribute('src') !== avatar) el('pp-avatar').src = avatar;
+    show(el('pp-avatar'), true);
+  } else {
+    el('pp-avatar').removeAttribute('src');
+    show(el('pp-avatar'), false);
+  }
+  el('pp-avatar').onerror = () => {
+    el('pp-avatar').removeAttribute('src');
+    show(el('pp-avatar'), false);
+  };
+
+  const banner = el('pf-banner').value.trim();
+  el('pp-banner').style.backgroundImage = isValidHttpUrl(banner)
+    ? `url(${JSON.stringify(banner)})`
+    : '';
+
+  const about = el('pf-about').value.trim();
+  el('pp-about').textContent = about.length > 200 ? about.slice(0, 200) + '…' : about;
+
+  const website = el('pf-website').value.trim();
+  if (isValidHttpUrl(website)) {
+    const link = el('pp-website');
+    link.href = website;
+    try {
+      link.textContent = new URL(website).hostname;
+    } catch {
+      link.textContent = website;
+    }
+    show(link, true);
+  } else {
+    show(el('pp-website'), false);
+  }
+
+  const nip05 = el('pf-nip05').value.trim();
+  const nip05Chip = el('pp-nip05');
+  if (nip05Check?.ok && nip05Check.verified) {
+    nip05Chip.textContent = `✓ ${nip05}`;
+    nip05Chip.className = 'chip ok';
+    show(nip05Chip, true);
+  } else if (nip05) {
+    nip05Chip.textContent = nip05;
+    nip05Chip.className = 'chip';
+    show(nip05Chip, true);
+  } else {
+    show(nip05Chip, false);
+  }
+
+  const lud16 = el('pf-lud16').value.trim();
+  const lud16Chip = el('pp-lud16');
+  if (lud16Check?.ok) {
+    lud16Chip.textContent = `⚡ ${lud16} · ${lud16Check.minSats}–${lud16Check.maxSats} sats`;
+    lud16Chip.className = 'chip ok';
+    show(lud16Chip, true);
+  } else if (lud16) {
+    lud16Chip.textContent = `⚡ ${lud16}`;
+    lud16Chip.className = 'chip';
+    show(lud16Chip, true);
+  } else {
+    show(lud16Chip, false);
+  }
+
+  show(el('pp-bot'), fields.bot === true);
+}
+
+for (const id of [
+  'pf-name', 'pf-display-name', 'pf-about', 'pf-picture', 'pf-banner',
+  'pf-website', 'pf-nip05', 'pf-lud16', 'pf-bot',
+]) {
+  el(id).addEventListener('input', () => {
+    if (id === 'pf-nip05') nip05Check = null;
+    if (id === 'pf-lud16') lud16Check = null;
+    renderPreview();
+  });
+}
+
+// ---------- on-demand checks ----------
+
+el('btn-check-nip05').addEventListener('click', async () => {
+  const address = el('pf-nip05').value.trim();
+  const out = el('nip05-result');
+  if (!address) {
+    show(out, false);
+    return;
+  }
+  out.textContent = t('checkRunning');
+  out.className = 'hint check-result';
+  show(out, true);
+  try {
+    const res = await send({ action: 'profile.check-nip05', address });
+    nip05Check = res;
+    if (res.ok && res.verified) {
+      out.textContent = t('checkNip05Verified', [address]);
+      out.className = 'hint check-result ok';
+    } else if (res.ok) {
+      const key =
+        res.reason === 'mismatch' ? 'checkNip05Mismatch'
+        : res.reason === 'npub' ? 'checkNip05Npub'
+        : 'checkNip05NotFound';
+      out.textContent = t(key, [address]);
+      out.className = 'hint check-result bad';
+    } else {
+      out.textContent = t('checkFailed', [res.code ?? '?']);
+      out.className = 'hint check-result bad';
+    }
+  } catch (e) {
+    out.textContent = e?.message ?? String(e);
+    out.className = 'hint check-result bad';
+  }
+  show(out, true);
+  renderPreview();
+});
+
+el('btn-check-lud16').addEventListener('click', async () => {
+  const address = el('pf-lud16').value.trim();
+  const out = el('lud16-result');
+  if (!address) {
+    show(out, false);
+    return;
+  }
+  out.textContent = t('checkRunning');
+  out.className = 'hint check-result';
+  show(out, true);
+  try {
+    const res = await send({ action: 'profile.check-lud16', address });
+    lud16Check = res;
+    if (res.ok) {
+      out.textContent = res.allowsNostr
+        ? t('checkLud16Ok', [String(res.minSats), String(res.maxSats)])
+        : t('checkLud16NoZap', [String(res.minSats), String(res.maxSats)]);
+      out.className = 'hint check-result ok';
+    } else {
+      out.textContent = t('checkFailed', [res.code ?? '?']);
+      out.className = 'hint check-result bad';
+    }
+  } catch (e) {
+    out.textContent = e?.message ?? String(e);
+    out.className = 'hint check-result bad';
+  }
+  show(out, true);
+  renderPreview();
+});
+
 
 el('btn-profile-publish').addEventListener('click', async () => {
   show(el('profile-error'), false);
   show(el('profile-status'), false);
+  const fields = readProfileForm();
+  const bad = profileFieldErrors(fields);
+  if (bad.length) {
+    showError(el('profile-error'), { message: t('errorInvalidUrl', [bad.join(', ')]) });
+    return;
+  }
   try {
-    const res = await send({ action: 'profile.publish', fields: readProfileForm() });
+    const res = await send({ action: 'profile.publish', fields });
     await refreshProfile();
     flash(el('profile-status'), t('profilePublished', [String(res.relays?.length ?? 0)]));
   } catch (e) {

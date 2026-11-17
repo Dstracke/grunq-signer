@@ -7,8 +7,11 @@ import test from 'node:test';
 import {
   PROFILE_STORE,
   PROFILE_FIELDS,
+  PROFILE_URL_FIELDS,
   createProfileService,
+  isValidHttpUrl,
   planRepublish,
+  profileFieldErrors,
   sanitizeProfile,
 } from '../src/signer/profile.js';
 import { derivePubkeyHex, finalizeEvent, randomIdentity } from '../src/lib/keys.js';
@@ -65,18 +68,46 @@ test('profile: sanitize keeps known fields, trims and caps lengths', () => {
     display_name: 'Nostr Fan',
     about: 'x'.repeat(5000),
     picture: 'https://example.org/a.png',
+    banner: 'https://example.org/banner.png',
+    website: 'https://example.org/',
     nip05: 'name@example.com',
     lud16: 'name@wallet.example',
-    website: 'https://ignored.example',
     bot: true,
     extra: 42,
   });
-  assert.deepEqual(Object.keys(clean), ['name', 'display_name', 'about', 'picture', 'nip05', 'lud16']);
+  assert.deepEqual(Object.keys(clean), [
+    'name', 'display_name', 'about', 'picture', 'banner', 'website', 'nip05', 'lud16', 'bot',
+  ]);
   assert.equal(clean.name, 'alice');
   assert.equal(clean.about.length, PROFILE_FIELDS.about);
-  assert.equal(clean.website, undefined);
+  assert.equal(clean.bot, true);
   assert.deepEqual(sanitizeProfile(null), {});
   assert.deepEqual(sanitizeProfile({ name: '   ' }), {});
+  // bot must be exactly true, not a truthy string.
+  assert.deepEqual(sanitizeProfile({ bot: 'yes' }), {});
+});
+
+test('profile: URL fields only accept http(s)', () => {
+  assert.equal(isValidHttpUrl('https://example.org/x'), true);
+  assert.equal(isValidHttpUrl('http://example.org/x'), true);
+  assert.equal(isValidHttpUrl('javascript:alert(1)'), false);
+  assert.equal(isValidHttpUrl('data:image/png;base64,xxx'), false);
+  assert.equal(isValidHttpUrl('example.org'), false);
+  assert.equal(isValidHttpUrl(''), false);
+  assert.deepEqual(PROFILE_URL_FIELDS, ['picture', 'banner', 'website']);
+
+  const clean = sanitizeProfile({
+    name: 'alice',
+    picture: 'javascript:alert(1)',
+    banner: 'ftp://example.org/b.png',
+    website: 'https://example.org/',
+  });
+  assert.equal(clean.picture, undefined);
+  assert.equal(clean.banner, undefined);
+  assert.equal(clean.website, 'https://example.org/');
+
+  assert.deepEqual(profileFieldErrors({ website: 'nope', picture: 'https://ok.example/a.png' }), ['website']);
+  assert.deepEqual(profileFieldErrors({}), []);
 });
 
 test('profile: publish signs a kind 0 and stores event id + fields', async () => {
@@ -103,10 +134,14 @@ test('profile: publish signs a kind 0 and stores event id + fields', async () =>
   assert.deepEqual((await service.load()).fields.name, 'nostr');
 });
 
-test('profile: publish rejects empty profiles and missing relays', async () => {
+test('profile: publish rejects empty profiles, missing relays and bad URLs', async () => {
   const { service, sign } = setup();
   await assert.rejects(service.publish({}, ['wss://relay'], sign), (e) => e.code === 'empty_profile');
   await assert.rejects(service.publish({ name: 'x' }, [], sign), (e) => e.code === 'no_relays');
+  await assert.rejects(
+    service.publish({ name: 'x', website: 'javascript:alert(1)' }, ['wss://relay'], sign),
+    (e) => e.code === 'invalid_url' && e.fields.includes('website'),
+  );
 });
 
 test('profile: a failed publish keeps the locally saved fields', async () => {

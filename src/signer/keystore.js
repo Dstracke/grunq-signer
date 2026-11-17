@@ -411,7 +411,7 @@ export function createKeystore(env) {
      * file. The file is only as safe as the passphrase: plaintext identities
      * stay plaintext inside the sealed payload.
      */
-    async exportBackup(password, repeat) {
+    async exportBackup(password, repeat, extra = {}) {
       checkPassword(password, repeat);
       const database = await db();
       const payload = {
@@ -425,6 +425,8 @@ export function createKeystore(env) {
           created: item.created,
           secret: { ...item.secret },
         })),
+        // Optional per-identity extras (the caller supplies e.g. profiles).
+        ...(extra.profiles && typeof extra.profiles === 'object' ? { profiles: extra.profiles } : {}),
       };
       const file = sealBundle(payload, password, { logN });
       await api.touch();
@@ -470,7 +472,8 @@ export function createKeystore(env) {
         database.active = database.items[database.items.length - 1].id;
       }
       await writeDb(database);
-      return { added, skipped, count: database.items.length };
+      const profiles = payload.profiles && typeof payload.profiles === 'object' ? payload.profiles : {};
+      return { added, skipped, count: database.items.length, profiles };
     },
 
     /** Remove the active identity; falls back to the most recent remaining one. */

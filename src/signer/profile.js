@@ -11,9 +11,35 @@ export const PROFILE_FIELDS = {
   display_name: 64,
   about: 2000,
   picture: 2048,
+  banner: 2048,
+  website: 2048,
   nip05: 254,
   lud16: 254,
 };
+
+// Fields that must be http(s) URLs; anything else is rejected, not stored.
+export const PROFILE_URL_FIELDS = ['picture', 'banner', 'website'];
+
+export function isValidHttpUrl(value) {
+  if (typeof value !== 'string' || !value.trim()) return false;
+  try {
+    const url = new URL(value.trim());
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+/** Field keys with an invalid URL (for the editor/background to reject). */
+export function profileFieldErrors(input) {
+  const errors = [];
+  if (!input || typeof input !== 'object') return errors;
+  for (const key of PROFILE_URL_FIELDS) {
+    const raw = input[key];
+    if (typeof raw === 'string' && raw.trim() && !isValidHttpUrl(raw)) errors.push(key);
+  }
+  return errors;
+}
 
 export function sanitizeProfile(input) {
   const out = {};
@@ -23,8 +49,11 @@ export function sanitizeProfile(input) {
     if (typeof raw !== 'string') continue;
     const value = raw.trim();
     if (!value) continue;
+    if (PROFILE_URL_FIELDS.includes(key) && !isValidHttpUrl(value)) continue;
     out[key] = value.slice(0, max);
   }
+  // NIP-24 boolean flag: only store it when explicitly true.
+  if (input.bot === true) out.bot = true;
   return out;
 }
 
@@ -84,6 +113,12 @@ export function createProfileService(env) {
      * locally first, so a relay failure never loses the user's edits.
      */
     async publish(fields, relays, sign) {
+      const invalid = profileFieldErrors(fields);
+      if (invalid.length > 0) {
+        const e = fail('invalid_url');
+        e.fields = invalid;
+        throw e;
+      }
       const clean = sanitizeProfile(fields);
       if (Object.keys(clean).length === 0) throw fail('empty_profile');
       if (!Array.isArray(relays) || relays.length === 0) throw fail('no_relays');

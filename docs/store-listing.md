@@ -46,7 +46,9 @@ WHAT IT DOES
 • Multiple identities (for example a streamer key and a chat key) with
   per-identity sessions and profile.
 • Public profile (kind 0) editor: name, display name, about, picture,
-  NIP-05 and lightning address, published to your relays.
+  banner, website, NIP-05, lightning address and bot flag, with a live
+  preview and on-demand checks of the NIP-05 address and the lightning
+  address; published to your relays.
 • Encrypted backup of all identities in one passphrase-protected file, and a
   warning when the same client name is connected twice (two devices).
 • Identity export as QR codes (npub openly, nsec only after an explicit

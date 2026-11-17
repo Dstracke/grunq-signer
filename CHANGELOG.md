@@ -32,12 +32,17 @@ First public release. A browser extension that is both a NIP-07 provider
 - **Multiple identities** with labels, per-identity NIP-46 sessions and
   profile; switching restarts the signer with the new key.
 - **Public profile editor** (kind 0: name, display_name, about, picture,
-  nip05, lud16) with publishing to the configured relays, loading back and
-  NIP-09 deletion; re-publishes on start to relays that lost the profile.
+  banner, website, nip05, lud16, bot flag) with URL validation, a live
+  preview, publishing to the configured relays, loading back and NIP-09
+  deletion; re-publishes on start to relays that lost the profile.
+- **Profile checks on demand**: lud16 resolves the LNURL-pay endpoint (amount
+  range, zap support), NIP-05 fetches `.well-known/nostr.json` and compares
+  the published key with the identity. Both are https-only, size/time-limited
+  and never run in the background.
 - **QR export** of npub (public) and nsec (behind an explicit two-step
   confirmation) to move an identity to a phone.
-- **Encrypted backup**: all identities (labels + keys) in one
-  passphrase-sealed file; import merges by public key.
+- **Encrypted backup**: all identities (labels + keys) and their profiles in
+  one passphrase-sealed file; import merges by public key.
 - **Multi-device warning**: the pairing dialog and the session list flag two
   connected clients with the same name (likely the same identity on a second
   device) so they do not overwrite each other's announcements.

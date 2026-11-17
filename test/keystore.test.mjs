@@ -247,7 +247,7 @@ test('keystore: backup exports all identities and imports them elsewhere', async
     (e) => e.code === 'wrong_password',
   );
   const res = await target.ks.importBackup(JSON.stringify(file), 'backup-passphrase');
-  assert.deepEqual(res, { added: 2, skipped: 0, count: 2 });
+  assert.deepEqual(res, { added: 2, skipped: 0, count: 2, profiles: {} });
   const list = await target.ks.list();
   assert.deepEqual(list.map((i) => i.label).sort(), ['Chat', 'Streamer']);
   assert.equal(list.find((i) => i.label === 'Chat').encrypted, true);
@@ -269,6 +269,7 @@ test('keystore: backup import merges, skips duplicates and can replace', async (
     added: 1,
     skipped: 0,
     count: 2,
+    profiles: {},
   });
   // Importing the same backup again skips the duplicate and keeps the active
   // identity (the local "Own" key).
@@ -276,13 +277,26 @@ test('keystore: backup import merges, skips duplicates and can replace', async (
     added: 0,
     skipped: 1,
     count: 2,
+    profiles: {},
   });
   assert.equal(await target.ks.pubkeyHex(), own.pubkeyHex, 'active identity unchanged');
 
   // replace=true drops the local identity first.
   const res = await target.ks.importBackup(JSON.stringify(file), 'backup-passphrase', { replace: true });
-  assert.deepEqual(res, { added: 1, skipped: 0, count: 1 });
+  assert.deepEqual(res, { added: 1, skipped: 0, count: 1, profiles: {} });
   assert.equal(await target.ks.pubkeyHex(), a.pubkeyHex);
+});
+
+test('keystore: backup carries extra profile data', async () => {
+  const source = setup();
+  const id = randomIdentity();
+  await source.ks.importSecret(id.privHex, 'Streamer');
+  const profiles = { [id.pubkeyHex]: { fields: { name: 'alice', website: 'https://example.org/' }, publishedAt: 123 } };
+  const { file } = await source.ks.exportBackup('backup-passphrase', undefined, { profiles });
+  const target = setup();
+  const res = await target.ks.importBackup(JSON.stringify(file), 'backup-passphrase');
+  assert.deepEqual(res.profiles, profiles);
+  assert.equal(res.added, 1);
 });
 
 test('keystore: backup import refuses broken files and mismatched keys', async () => {
@@ -311,6 +325,7 @@ test('keystore: backup import refuses broken files and mismatched keys', async (
     added: 0,
     skipped: 0,
     count: 0,
+    profiles: {},
   });
 });
 

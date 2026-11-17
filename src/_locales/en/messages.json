@@ -180,6 +180,97 @@
   "profileAbout": {
     "message": "About"
   },
+  "profileWebsite": {
+    "message": "Website URL"
+  },
+  "profileBanner": {
+    "message": "Banner URL"
+  },
+  "profileBot": {
+    "message": "This is a bot account"
+  },
+  "profilePreviewHeading": {
+    "message": "Preview"
+  },
+  "profilePreviewEmpty": {
+    "message": "No name yet"
+  },
+  "btnCheck": {
+    "message": "Check"
+  },
+  "checkRunning": {
+    "message": "Checking…"
+  },
+  "checkNip05Verified": {
+    "message": "NIP-05 verified: $ADDRESS$",
+    "placeholders": {
+      "address": {
+        "content": "$1"
+      }
+    }
+  },
+  "checkNip05Mismatch": {
+    "message": "The key published at $ADDRESS$ does not match this identity.",
+    "placeholders": {
+      "address": {
+        "content": "$1"
+      }
+    }
+  },
+  "checkNip05NotFound": {
+    "message": "No entry for this name at $ADDRESS$.",
+    "placeholders": {
+      "address": {
+        "content": "$1"
+      }
+    }
+  },
+  "checkNip05Npub": {
+    "message": "$ADDRESS$ publishes an npub — NIP-05 requires lowercase hex.",
+    "placeholders": {
+      "address": {
+        "content": "$1"
+      }
+    }
+  },
+  "checkLud16Ok": {
+    "message": "$MIN$–$MAX$ sats · zaps supported",
+    "placeholders": {
+      "min": {
+        "content": "$1"
+      },
+      "max": {
+        "content": "$2"
+      }
+    }
+  },
+  "checkLud16NoZap": {
+    "message": "$MIN$–$MAX$ sats · no zap support",
+    "placeholders": {
+      "min": {
+        "content": "$1"
+      },
+      "max": {
+        "content": "$2"
+      }
+    }
+  },
+  "checkFailed": {
+    "message": "Check failed: $REASON$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    }
+  },
+  "errorInvalidUrl": {
+    "message": "Invalid URL in: $FIELD$",
+    "placeholders": {
+      "field": {
+        "content": "$1"
+      }
+    }
+  },
   "profilePicture": {
     "message": "Picture URL"
   },

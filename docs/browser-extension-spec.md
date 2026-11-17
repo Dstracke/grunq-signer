@@ -348,6 +348,16 @@ grunq_signer:audit         [ { ts, scope: 'nip46'|'nip07', method,
   dort dauerhaft auflösbar ist („Profil dort speichern"). Wie im
   Grunq-Knoten (GQ-09/GQ-26) folgt eine Nachveröffentlichung beim Start,
   falls das Profil dort fehlt.
+  **Felder (17.11.2026):** `name`, `display_name`, `about`, `picture`,
+  `banner`, `website`, `nip05`, `lud16` plus `bot`-Flag; URL-Felder nur
+  `http(s)` (sonst `invalid_url`, Editor blockt vorab), Längen-Caps wie
+  gehabt, Live-Vorschau mit Avatar/Banner/NIP-05-Häkchen/⚡-Adresse.
+  **Prüfen-Buttons (on demand):** lud16 löst die LNURL-Pay auf
+  (Betragsbereich, Zap-Unterstützung), NIP-05 holt
+  `https://<domain>/.well-known/nostr.json` und vergleicht den Lowercase-
+  Hex-Schlüssel; `src/lib/net.js` erlaubt nur https, blockt private Hosts,
+  keine Redirects, 10 s Timeout, 64 KiB Limit, Ergebnisse 10 min gecacht.
+  Beim Start wird nichts geprüft.
   **Umsetzung (17.11.2026):** Abschnitt „Profil" der Options-Seite,
   `src/signer/profile.js` normalisiert Felder
   (Trim + Längen-Caps, nur diese sechs Schlüssel), signiert Kind 0 mit der

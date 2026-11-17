@@ -179,6 +179,97 @@
   "profileAbout": {
     "message": "Über mich"
   },
+  "profileWebsite": {
+    "message": "Website-URL"
+  },
+  "profileBanner": {
+    "message": "Banner-URL"
+  },
+  "profileBot": {
+    "message": "Dies ist ein Bot-Account"
+  },
+  "profilePreviewHeading": {
+    "message": "Vorschau"
+  },
+  "profilePreviewEmpty": {
+    "message": "Noch kein Name"
+  },
+  "btnCheck": {
+    "message": "Prüfen"
+  },
+  "checkRunning": {
+    "message": "Wird geprüft…"
+  },
+  "checkNip05Verified": {
+    "message": "NIP-05 verifiziert: $ADDRESS$",
+    "placeholders": {
+      "address": {
+        "content": "$1"
+      }
+    }
+  },
+  "checkNip05Mismatch": {
+    "message": "Der unter $ADDRESS$ veröffentlichte Schlüssel passt nicht zu dieser Identität.",
+    "placeholders": {
+      "address": {
+        "content": "$1"
+      }
+    }
+  },
+  "checkNip05NotFound": {
+    "message": "Kein Eintrag für diesen Namen unter $ADDRESS$.",
+    "placeholders": {
+      "address": {
+        "content": "$1"
+      }
+    }
+  },
+  "checkNip05Npub": {
+    "message": "$ADDRESS$ veröffentlicht eine npub – NIP-05 verlangt Lowercase-Hex.",
+    "placeholders": {
+      "address": {
+        "content": "$1"
+      }
+    }
+  },
+  "checkLud16Ok": {
+    "message": "$MIN$–$MAX$ sats · Zaps möglich",
+    "placeholders": {
+      "min": {
+        "content": "$1"
+      },
+      "max": {
+        "content": "$2"
+      }
+    }
+  },
+  "checkLud16NoZap": {
+    "message": "$MIN$–$MAX$ sats · keine Zap-Unterstützung",
+    "placeholders": {
+      "min": {
+        "content": "$1"
+      },
+      "max": {
+        "content": "$2"
+      }
+    }
+  },
+  "checkFailed": {
+    "message": "Prüfung fehlgeschlagen: $REASON$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    }
+  },
+  "errorInvalidUrl": {
+    "message": "Ungültige URL in: $FIELD$",
+    "placeholders": {
+      "field": {
+        "content": "$1"
+      }
+    }
+  },
   "profilePicture": {
     "message": "Bild-URL"
   },
