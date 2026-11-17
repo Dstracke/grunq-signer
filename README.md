@@ -31,7 +31,10 @@ an identity onto a phone. **Passphrase protection (NIP-49) and auto-lock
 are implemented**: the popup encrypts the key with a passphrase
 (`ncryptsec`), keeps only the session key in memory, locks automatically
 after the configured idle time and exports the `ncryptsec` as a backup QR.
-Still open from M3: audit log, profile editor, options page.
+The **profile editor** publishes the public kind-0 profile (name,
+display_name, about, picture, nip05, lud16) to the allow-listed relays and
+can load/delete it again. Still open from M3: audit log, options page,
+re-publishing the profile on start.
 
 The full specification lives in
 [`docs/browser-extension-spec.md`](docs/browser-extension-spec.md)
@@ -94,6 +97,18 @@ showing the warning — the nsec. Both codes are generated locally with the
 bundled `qrcode-generator`; nothing is sent anywhere. Scan the nsec code with
 a signer app on the phone (NIP-46 client) or import the string there by hand.
 The secret is dropped from the popup as soon as the panel is collapsed.
+
+### Publishing the profile
+
+The **Profile** card (collapsed by default, **Edit** opens it) edits the
+public kind-0 event: `name`, `display_name`, `about`, `picture`, `nip05` and
+`lud16`. **Publish profile** signs it with the identity and sends it to the
+configured relay list (including `relay.grunq.com` when it is there); the
+fields are saved locally first, so a relay problem never loses your input.
+**Load from relays** pulls the newest own profile back (works while locked —
+reading needs no key), **Delete profile** sends a NIP-09 request with `e` and
+`a` tags and clears the local copy. Publishing and deleting need an unlocked
+identity.
 
 ### Passphrase protection and auto-lock
 

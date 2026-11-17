@@ -49,10 +49,15 @@ body {
   width: 380px;
   margin: 0;
   padding: 14px;
+  /* The shorthand resets background-repeat to `repeat`: without the explicit
+     no-repeat/fixed pair the two radial gradients tile down the viewport and
+     show up as stacked bands on tall popups. */
   background:
     radial-gradient(620px 320px at 82% -12%, rgba(61, 139, 255, 0.22), transparent 62%),
     radial-gradient(420px 280px at 2% 0%, rgba(255, 61, 129, 0.12), transparent 58%),
     var(--bg);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
   color: var(--text);
   font-family: var(--font);
   font-size: 13px;
@@ -364,4 +369,36 @@ textarea:focus {
 
 #sec-state.ok {
   color: var(--lime);
+}
+
+/* ---------- profile card ---------- */
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.card-head h2 {
+  margin: 0;
+}
+
+button.mini {
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
+.flabel {
+  display: block;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+#profile-form .field,
+#profile-form textarea {
+  margin-top: 4px;
 }

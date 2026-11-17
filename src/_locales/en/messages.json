@@ -153,6 +153,79 @@
   "qrNsecScanHint": {
     "message": "Scan with a signer app on your phone (NIP-46 client, e.g. Amber or nsec.app) or import the nsec there by hand."
   },
+  "profileHeading": {
+    "message": "Profile"
+  },
+  "btnEdit": {
+    "message": "Edit"
+  },
+  "btnClose": {
+    "message": "Close"
+  },
+  "profileNone": {
+    "message": "No public profile published yet."
+  },
+  "profilePublishHint": {
+    "message": "The profile is public: it is published as a kind-0 event to the relays below. Only fill in what may be public."
+  },
+  "profileName": {
+    "message": "Name (short login name)"
+  },
+  "profileDisplayName": {
+    "message": "Display name"
+  },
+  "profileAbout": {
+    "message": "About"
+  },
+  "profilePicture": {
+    "message": "Picture URL"
+  },
+  "profileNip05": {
+    "message": "NIP-05 address"
+  },
+  "profileLud16": {
+    "message": "Lightning address (lud16)"
+  },
+  "btnPublishProfile": {
+    "message": "Publish profile"
+  },
+  "btnFetchProfile": {
+    "message": "Load from relays"
+  },
+  "btnDeleteProfile": {
+    "message": "Delete profile"
+  },
+  "confirmProfileDelete": {
+    "message": "Delete the published profile? A NIP-09 deletion request is sent to the relays (relays may keep a copy)."
+  },
+  "profilePublished": {
+    "message": "Profile published to $COUNT$ relay(s).",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "profileFetched": {
+    "message": "Loaded from the relays — publish to apply changes."
+  },
+  "profileDeleted": {
+    "message": "Deletion request sent and local profile cleared."
+  },
+  "profileNotFound": {
+    "message": "No profile found on the relays."
+  },
+  "profileEmpty": {
+    "message": "Fill in at least one field before publishing."
+  },
+  "profilePublishFailed": {
+    "message": "Profile saved locally, but publishing failed: $REASON$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    }
+  },
   "approvalsHeading": {
     "message": "Site approvals"
   },

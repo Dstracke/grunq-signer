@@ -152,6 +152,79 @@
   "qrNsecScanHint": {
     "message": "Mit einer Signer-App auf dem Handy scannen (NIP-46-Client, z. B. Amber oder nsec.app) oder den nsec dort von Hand importieren."
   },
+  "profileHeading": {
+    "message": "Profil"
+  },
+  "btnEdit": {
+    "message": "Bearbeiten"
+  },
+  "btnClose": {
+    "message": "Schließen"
+  },
+  "profileNone": {
+    "message": "Noch kein öffentliches Profil veröffentlicht."
+  },
+  "profilePublishHint": {
+    "message": "Das Profil ist öffentlich: Es wird als Kind-0-Event an die unten eingestellten Relays veröffentlicht. Trage nur ein, was öffentlich sein darf."
+  },
+  "profileName": {
+    "message": "Name (kurzer Login-Name)"
+  },
+  "profileDisplayName": {
+    "message": "Anzeigename"
+  },
+  "profileAbout": {
+    "message": "Über mich"
+  },
+  "profilePicture": {
+    "message": "Bild-URL"
+  },
+  "profileNip05": {
+    "message": "NIP-05-Adresse"
+  },
+  "profileLud16": {
+    "message": "Lightning-Adresse (lud16)"
+  },
+  "btnPublishProfile": {
+    "message": "Profil veröffentlichen"
+  },
+  "btnFetchProfile": {
+    "message": "Von Relays laden"
+  },
+  "btnDeleteProfile": {
+    "message": "Profil löschen"
+  },
+  "confirmProfileDelete": {
+    "message": "Veröffentlichtes Profil löschen? Es wird ein NIP-09-Löschantrag an die Relays geschickt (Relays können eine Kopie behalten)."
+  },
+  "profilePublished": {
+    "message": "Profil an $COUNT$ Relay(s) veröffentlicht.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "profileFetched": {
+    "message": "Von den Relays geladen – zum Übernehmen veröffentlichen."
+  },
+  "profileDeleted": {
+    "message": "Löschantrag geschickt, lokales Profil geleert."
+  },
+  "profileNotFound": {
+    "message": "Auf den Relays wurde kein Profil gefunden."
+  },
+  "profileEmpty": {
+    "message": "Trage vor dem Veröffentlichen mindestens ein Feld ein."
+  },
+  "profilePublishFailed": {
+    "message": "Profil lokal gespeichert, Veröffentlichen schlug aber fehl: $REASON$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    }
+  },
   "approvalsHeading": {
     "message": "Website-Freigaben"
   },

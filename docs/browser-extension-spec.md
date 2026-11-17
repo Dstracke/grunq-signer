@@ -236,6 +236,9 @@ grunq_signer:session       storage.session (nur RAM): { privHex,
                            der Browser-Sitzung, nie auf Platte
 grunq_signer:identity      pubkey, erstellt (öffentlich, auch gesperrt
                            lesbar)
+grunq_signer:profile       { fields: {name, display_name, about,
+                           picture, nip05, lud16}, eventId, publishedAt,
+                           updatedAt } (öffentliches Kind-0-Profil)
 grunq_signer:permissions   { origin: { nip07: bool, sign_kinds: [..] } }
 grunq_signer:sessions      [ { secret, relays, clientPub, perms,
                              clientName, bound, created, lastActive } ]
@@ -304,13 +307,28 @@ grunq_signer:settings      relays (global allowlist), idleMinutes,
   `pubkey_whitelist` ist eine Option; vorhanden (auch leere Liste)
   blockiert ALLE Writes. Das Bootstrap-Relay läuft deshalb ohne
   Whitelist; Spamschutz über Rate-/Größen-Limits (5 msg/s, 64 KiB).
-- **Nutzerprofil:** Die Extension pflegt das öffentliche Nostr-Profil
-  (Kind 0: `name`, `display_name`, `about`, `picture`, `nip05`, `lud16`)
+- **Nutzerprofil (umgesetzt):** Die Extension pflegt das öffentliche
+  Nostr-Profil (Kind 0: `name`, `display_name`, `about`, `picture`,
+  `nip05`, `lud16`)
   in einem Profil-Editor und veröffentlicht es beim Speichern an die
   Allowlist-Relays — inklusive `relay.grunq.com`, damit die Identität
   dort dauerhaft auflösbar ist („Profil dort speichern"). Wie im
   Grunq-Knoten (GQ-09/GQ-26) folgt eine Nachveröffentlichung beim Start,
   falls das Profil dort fehlt.
+  **Umsetzung (17.11.2026):** Popup-Karte „Profil" (eingeklappt, „Bearbeiten"
+  öffnet das Formular), `src/signer/profile.js` normalisiert Felder
+  (Trim + Längen-Caps, nur diese sechs Schlüssel), signiert Kind 0 mit der
+  Identität und veröffentlicht an die **Relay-Allowlist** (also inkl.
+  `relay.grunq.com`, wenn eingetragen); Felder werden vor dem Publish
+  lokal gespeichert, ein Relay-Fehler verliert also keine Eingaben. „Von
+  Relays laden" holt die neueste eigene Kind-0 (kein Schlüssel nötig,
+  funktioniert auch gesperrt; Grace-Fenster 700 ms gegen ältere Antworten
+  langsamer Relays). Löschen schickt NIP-09 mit `e` (letzte Event-ID) und
+  `a` (`0:<pubkey>:`). Veröffentlichen/Löschen brauchen ein entsperrtes
+  Store. One-Shot-Relay-Pools pro Aktion, damit keine Sockets und
+  Reconnect-Timer zwischen Popup-Aktionen weiterlaufen. Nachveröffentlichen
+  beim Start (Spec oben) ist noch offen — der lokale Stand bleibt sichtbar,
+  ein fehlendes Relay-Profil merkt man erst beim Laden.
 - **Grenze (bewusst):** Gespeichert wird ausschließlich der öffentliche
   Kind-0-Event — nichts, was nicht ohnehin öffentlich wäre. Keine Keys,
   kein Chat, keine Kontakte, keine Telemetrie, kein Account; Löschen per
@@ -369,10 +387,11 @@ laufen unverändert im Knoten, siehe auch GQ-03.)
   Kinds-Whitelist, Audit-Log, ncryptsec-Import, Auto-Lock, Profil-Editor
   (Kind 0) mit Veröffentlichung an die Allowlist-Relays.
   **Stand 17.11.2026:** nostrconnect-Kopplung, Kind-Freigaben, QR-Export,
-  ncryptsec-Import/-Export und Auto-Lock sind umgesetzt (Tests:
-  `test/nip49.test.mjs` gegen den NIP-49-Vektor, `test/keystore.test.mjs`
-  für Sperren/Entsperren/Idle). Offen: Audit-Log, Profil-Editor,
-  Options-Seite.
+  ncryptsec-Import/-Export, Auto-Lock und der Profil-Editor sind umgesetzt
+  (Tests: `test/nip49.test.mjs` gegen den NIP-49-Vektor,
+  `test/keystore.test.mjs` für Sperren/Entsperren/Idle,
+  `test/profile.test.mjs` für Publish/Fetch/NIP-09). Offen: Audit-Log,
+  Options-Seite, Nachveröffentlichung des Profils beim Start.
 - **M4 (optional):** Multi-Identity (Streamer-/Chat-Identität getrennt),
   NIP-26-Delegation, Web-NWC (`nostr+walletconnect`) als Client-Rolle.
 

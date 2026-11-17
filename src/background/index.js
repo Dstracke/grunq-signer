@@ -16,6 +16,7 @@ import {
   SETTINGS_STORE,
 } from '../signer/core.js';
 import { createKeystore } from '../signer/keystore.js';
+import { createProfileService } from '../signer/profile.js';
 
 const api = globalThis.browser ?? globalThis.chrome;
 
@@ -84,6 +85,42 @@ const keystore = createKeystore({
 
 async function hasIdentity() {
   return (await keystore.status()).hasKey;
+}
+
+// Profile traffic is one-shot: a fresh relay pool per publish/fetch keeps
+// sockets (and their reconnect timers) from living between popup actions.
+const profileTransport = {
+  publish: async (relays, event) => {
+    const pool = new RelayPool();
+    try {
+      return await pool.publish(relays, event);
+    } finally {
+      pool.close();
+    }
+  },
+  subscribe: (relays, filter, onEvent) => {
+    const pool = new RelayPool();
+    const handle = pool.subscribe(relays, filter, onEvent);
+    return {
+      close: () => {
+        try {
+          handle.close();
+        } finally {
+          pool.close();
+        }
+      },
+    };
+  },
+};
+
+const profileService = createProfileService({
+  storage: { get: getStore, set: setStore },
+  transport: profileTransport,
+  log: (...args) => console.log('[profile]', ...args),
+});
+
+function signDraft(draft) {
+  return keystore.privateKeyHex().then((privHex) => finalizeEvent(privHex, draft));
 }
 
 // ---------- approval windows ----------
@@ -462,6 +499,52 @@ async function handlePopup(msg) {
     case 'export-backup': {
       const res = await keystore.exportNcryptsec();
       if (!res) throw err('invalid_input');
+      return res;
+    }
+
+    // ---------- public profile (kind 0) ----------
+
+    case 'profile.get': {
+      const profile = await profileService.load();
+      const pubkey = await keystore.pubkeyHex();
+      return { ...profile, pubkey, npub: pubkey ? encodeNpub(pubkey) : null };
+    }
+
+    // Reading the profile needs no key, so this works while locked too.
+    case 'profile.fetch': {
+      const pubkey = await keystore.pubkeyHex();
+      if (!pubkey) throw err('no_key');
+      const { relays } = await signerCore.getRelaySettings();
+      const fields = await profileService.fetchLatest(pubkey, relays, { graceMs: 700, timeoutMs: 7000 });
+      if (!fields) throw { code: 'not_found', message: t('profileNotFound') };
+      return { fields };
+    }
+
+    case 'profile.publish': {
+      const status = await keystore.status();
+      if (status.encrypted && !status.unlocked) throw err('locked');
+      const { relays } = await signerCore.getRelaySettings();
+      if (relays.length === 0) throw err('invalid_input');
+      try {
+        const res = await profileService.publish(msg.fields ?? {}, relays, signDraft);
+        await keystore.touch();
+        return { ...res, relays };
+      } catch (e) {
+        if (e?.code) throw e.code === 'empty_profile'
+          ? { code: 'empty_profile', message: t('profileEmpty') }
+          : e;
+        throw { code: 'publish_failed', message: t('profilePublishFailed', [String(e?.message ?? e)]) };
+      }
+    }
+
+    case 'profile.delete': {
+      const status = await keystore.status();
+      if (status.encrypted && !status.unlocked) throw err('locked');
+      const pubkey = await keystore.pubkeyHex();
+      if (!pubkey) throw err('no_key');
+      const { relays } = await signerCore.getRelaySettings();
+      const res = await profileService.remove(pubkey, relays, signDraft);
+      await keystore.touch();
       return res;
     }
 
