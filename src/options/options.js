@@ -188,6 +188,70 @@ el('btn-identity-generate').addEventListener('click', async () => {
   }
 });
 
+// ---------- encrypted backup ----------
+
+function backupDownload(file) {
+  const blob = new Blob([JSON.stringify(file, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `grunq-signer-backup-${stamp}.json`;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+el('btn-backup-export').addEventListener('click', async () => {
+  show(el('backup-error'), false);
+  show(el('backup-status'), false);
+  try {
+    const res = await send({
+      action: 'backup.export',
+      password: el('backup-password').value,
+      repeat: el('backup-password2').value,
+    });
+    backupDownload(res.file);
+    el('backup-password').value = '';
+    el('backup-password2').value = '';
+    flash(el('backup-status'), t('backupExported', [String(res.count)]));
+  } catch (e) {
+    showError(el('backup-error'), e);
+  }
+});
+
+el('btn-backup-import').addEventListener('click', () => {
+  show(el('backup-error'), false);
+  if (!el('backup-password').value) {
+    showError(el('backup-error'), { message: t('backupPassphraseNeeded') });
+    return;
+  }
+  el('backup-file').click();
+});
+
+el('backup-file').addEventListener('change', async () => {
+  const file = el('backup-file').files?.[0];
+  el('backup-file').value = '';
+  if (!file) return;
+  show(el('backup-error'), false);
+  show(el('backup-status'), false);
+  try {
+    const text = await file.text();
+    const res = await send({
+      action: 'backup.import',
+      text,
+      password: el('backup-password').value,
+    });
+    el('backup-password').value = '';
+    el('backup-password2').value = '';
+    await refresh();
+    flash(el('backup-status'), t('backupImported', [String(res.added), String(res.skipped)]));
+  } catch (e) {
+    showError(el('backup-error'), e);
+  }
+});
+
 // ---------- profile ----------
 
 let profileData = { fields: {}, eventId: null, publishedAt: null };
@@ -397,11 +461,23 @@ function renderSessions() {
   const list = el('sessions');
   list.textContent = '';
   show(el('no-sessions'), state.sessions.length === 0);
+  const nameCounts = new Map();
+  for (const s of state.sessions) {
+    if (!s.bound || !s.clientName) continue;
+    nameCounts.set(s.clientName, (nameCounts.get(s.clientName) ?? 0) + 1);
+  }
   for (const s of state.sessions) {
     const li = document.createElement('li');
     const who = document.createElement('span');
     who.className = 'who';
     who.textContent = s.clientName || (s.bound ? shortPub(s.clientPub) : t('sessionWaiting'));
+    if (s.clientName && nameCounts.get(s.clientName) > 1) {
+      const chip = document.createElement('span');
+      chip.className = 'chip pending';
+      chip.textContent = t('multiDeviceChip');
+      chip.title = t('multiDeviceHint');
+      who.append(' ', chip);
+    }
     const sub = document.createElement('span');
     sub.className = 'sub mono';
     sub.textContent = s.clientNpub

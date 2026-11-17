@@ -292,6 +292,13 @@ export function createSignerCore(env) {
         let token = sessionForClient(sessions, clientPub);
         if (!token) {
           if (settings.relays.length === 0) throw err('no_relays');
+          // Same client name already connected from another key -> probably
+          // the same identity on a second device. Warn in the dialog (two
+          // signers for one npub overwrite each other's announcements).
+          const connectName = parseClientName(metadata);
+          const duplicateName = !!connectName && sessions.some(
+            (s) => s.bound && s.clientName === connectName && s.clientPub !== clientPub,
+          );
           // A client that keeps failing the approval must not keep popping
           // dialogs (relays are public, anyone can send connect requests).
           if (pairingLimiter.isBlocked(clientPub)) throw err('rate_limited');
@@ -300,8 +307,9 @@ export function createSignerCore(env) {
           // the provisional slot of a restarted client.
           const decision = await requestApproval({
             kind: 'nip46-connect',
-            clientName: parseClientName(metadata),
+            clientName: connectName,
             clientPub,
+            duplicateName,
           });
           if (decision !== 'allow') {
             pairingLimiter.fail(clientPub);
@@ -595,12 +603,16 @@ export function createSignerCore(env) {
         throw err('session_limit');
       }
       if (pairingLimiter.isBlocked(info.clientPub)) throw err('rate_limited');
+      const duplicateName = !!info.name && sessions.some(
+        (s) => s.bound && s.clientName === info.name && s.clientPub !== info.clientPub,
+      );
       const decision = await requestApproval({
         kind: 'nip46-nostrconnect',
         clientName: info.name,
         clientPub: info.clientPub,
         relays: info.relays,
         origin: typeof meta.origin === 'string' ? meta.origin : '',
+        duplicateName,
       });
       if (decision !== 'allow') {
         pairingLimiter.fail(info.clientPub);

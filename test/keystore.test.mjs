@@ -12,6 +12,7 @@ import {
   sessionsKey,
 } from '../src/signer/keystore.js';
 import { encodeNsec, randomIdentity } from '../src/lib/keys.js';
+import { sealBundle } from '../src/lib/bundle.js';
 
 function memoryStore() {
   const map = new Map();
@@ -226,6 +227,91 @@ test('keystore: rename keeps the key and trims the label', async () => {
   const renamed = await ks.rename(item.id, '  Chat-Key  ');
   assert.equal(renamed.label, 'Chat-Key');
   assert.equal(await ks.privateKeyHex(), id.privHex);
+});
+
+test('keystore: backup exports all identities and imports them elsewhere', async () => {
+  const source = setup();
+  const a = randomIdentity();
+  const b = randomIdentity();
+  await source.ks.importSecret(a.privHex, 'Streamer');
+  await source.ks.importSecret(b.privHex, 'Chat');
+  await source.ks.protect('mein-langes-passwort'); // protects the active (Chat)
+  const { file, count } = await source.ks.exportBackup('backup-passphrase', 'backup-passphrase');
+  assert.equal(count, 2);
+  assert.equal(file.format, 'grunq-signer-backup');
+  assert.match(file.payload, /^[0-9a-f]+$/);
+
+  const target = setup();
+  await assert.rejects(
+    target.ks.importBackup(JSON.stringify(file), 'falsch'),
+    (e) => e.code === 'wrong_password',
+  );
+  const res = await target.ks.importBackup(JSON.stringify(file), 'backup-passphrase');
+  assert.deepEqual(res, { added: 2, skipped: 0, count: 2 });
+  const list = await target.ks.list();
+  assert.deepEqual(list.map((i) => i.label).sort(), ['Chat', 'Streamer']);
+  assert.equal(list.find((i) => i.label === 'Chat').encrypted, true);
+  assert.equal(list.filter((i) => i.active).length, 1);
+  // The plaintext identity is usable right away, the encrypted one is locked.
+  assert.equal(await target.ks.list().then((l) => l.find((i) => i.label === 'Streamer').unlocked), true);
+});
+
+test('keystore: backup import merges, skips duplicates and can replace', async () => {
+  const source = setup();
+  const a = randomIdentity();
+  await source.ks.importSecret(a.privHex, 'Streamer');
+  const { file } = await source.ks.exportBackup('backup-passphrase');
+
+  const target = setup();
+  const own = randomIdentity();
+  await target.ks.importSecret(own.privHex, 'Own');
+  assert.deepEqual(await target.ks.importBackup(JSON.stringify(file), 'backup-passphrase'), {
+    added: 1,
+    skipped: 0,
+    count: 2,
+  });
+  // Importing the same backup again skips the duplicate and keeps the active
+  // identity (the local "Own" key).
+  assert.deepEqual(await target.ks.importBackup(JSON.stringify(file), 'backup-passphrase'), {
+    added: 0,
+    skipped: 1,
+    count: 2,
+  });
+  assert.equal(await target.ks.pubkeyHex(), own.pubkeyHex, 'active identity unchanged');
+
+  // replace=true drops the local identity first.
+  const res = await target.ks.importBackup(JSON.stringify(file), 'backup-passphrase', { replace: true });
+  assert.deepEqual(res, { added: 1, skipped: 0, count: 1 });
+  assert.equal(await target.ks.pubkeyHex(), a.pubkeyHex);
+});
+
+test('keystore: backup import refuses broken files and mismatched keys', async () => {
+  const ks = setup();
+  await assert.rejects(ks.ks.importBackup('not json', 'x'), (e) => e.code === 'invalid_backup');
+  await assert.rejects(
+    ks.ks.importBackup(JSON.stringify({ format: 'other' }), 'x'),
+    (e) => e.code === 'invalid_backup',
+  );
+
+  // A payload whose privHex does not derive the advertised pubkey is skipped.
+  const other = randomIdentity();
+  const fake = sealBundle(
+    {
+      kind: 'grunq-signer-identities',
+      version: 2,
+      items: [
+        { label: 'Fake', pubkey: other.pubkeyHex, secret: { privHex: 'b'.repeat(64) } },
+        { label: 'Kein Secret', pubkey: 'c'.repeat(64) },
+      ],
+    },
+    'backup-passphrase',
+    { logN: 12 },
+  );
+  assert.deepEqual(await ks.ks.importBackup(JSON.stringify(fake), 'backup-passphrase'), {
+    added: 0,
+    skipped: 0,
+    count: 0,
+  });
 });
 
 test('keystore: migrates the legacy single-identity storage', async () => {

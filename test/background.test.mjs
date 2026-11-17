@@ -138,6 +138,32 @@ test('background: profile and sessions are scoped per identity', async () => {
   assert.equal(r.sessions[0].id, 'chat-ses');
 });
 
+test('background: encrypted backup export and import', async () => {
+  const res = await call({
+    action: 'backup.export',
+    password: 'backup-passphrase',
+    repeat: 'backup-passphrase',
+  });
+  assert.ok(res.count >= 1, 'exports the current identities');
+  assert.equal(res.file.format, 'grunq-signer-backup');
+  assert.match(res.file.payload, /^[0-9a-f]+$/);
+
+  const imp = await call({
+    action: 'backup.import',
+    text: JSON.stringify(res.file),
+    password: 'backup-passphrase',
+  });
+  assert.equal(imp.added, 0, 'the same identity is already present');
+  assert.equal(imp.skipped, res.count);
+
+  const wrong = await call({
+    action: 'backup.import',
+    text: JSON.stringify(res.file),
+    password: 'falsch',
+  });
+  assert.equal(wrong.error?.code, 'wrong_password');
+});
+
 test('background: removing the active identity falls back, audit handlers answer', async () => {
   const list = await call({ action: 'identity.list' });
   const chat = list.find((i) => i.label === 'Chat');

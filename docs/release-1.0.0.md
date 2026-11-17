@@ -18,7 +18,7 @@ npm run package   # -> web-ext-artifacts/grunq_signer-1.0.0.zip
 |---|---|
 | Datei | `web-ext-artifacts/grunq_signer-1.0.0.zip` |
 | Größe | 164 KB (30 Dateien, `manifest.json` im ZIP-Root) |
-| SHA-256 | `13d548d7ae5f2679c4d173b7b8badb73b9e1a59655ef44fa342e1e843921ceb0` |
+| SHA-256 | `695eb0982734c54e42a0428c710cfab8d58f5259f18733ac1d8b4e4c9a9d5a67` |
 | Add-on-ID | `signer@grunq.com` |
 | Lizenz | AGPL-3.0 |
 | Datenschutz | https://grunq.com/grunq-signer/privacy.html (DE: `/datenschutz.html`) |
@@ -118,9 +118,10 @@ Alle 1280×800, englischer Satz in `store/screenshots/`, deutscher Satz in
 
 ```
 First public release: NIP-07 provider (window.nostr) and NIP-46 signer
-(bunker), NIP-49 passphrase protection with auto-lock, multiple identities,
-public profile editor, QR identity export and an audit log. English/German UI
-follows the browser language.
+(bunker), NIP-49 passphrase protection with auto-lock, multiple identities
+with an encrypted backup file, public profile editor, QR identity export,
+multi-device warning and an audit log. English/German UI follows the browser
+language.
 ```
 
 ## Nach der Veröffentlichung

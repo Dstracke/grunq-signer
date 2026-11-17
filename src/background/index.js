@@ -41,6 +41,7 @@ function err(code) {
     password_mismatch: 'errorPasswordMismatch',
     denied: 'errorDenied',
     rate_limited: 'errorRateLimited',
+    invalid_backup: 'errorInvalidBackup',
     invalid_input: 'errorInvalidInput',
     no_permission: 'errorNoPermission',
     internal: 'errorInternal',
@@ -511,6 +512,7 @@ async function handleWebNostrConnect(msg, sender) {
         no_relays: 'nip46ErrorNoRelays',
         unauthorized: 'nip46ErrorDenied',
         rate_limited: 'errorRateLimited',
+    invalid_backup: 'errorInvalidBackup',
         invalid_request: 'errorInvalidInput',
       };
       throw { code: e.nip46Code, message: t(map[e.nip46Code] ?? 'errorInternal') };
@@ -529,6 +531,7 @@ function popupError(e) {
     const map = {
       locked: 'errorLocked',
       rate_limited: 'errorRateLimited',
+    invalid_backup: 'errorInvalidBackup',
       session_limit: 'nip46ErrorSessionLimit',
       no_relays: 'nip46ErrorNoRelays',
       unauthorized: 'nip46ErrorDenied',
@@ -606,6 +609,28 @@ async function handlePopup(msg) {
 
     case 'identity.rename': {
       return await keystore.rename(String(msg.id ?? ''), String(msg.label ?? ''));
+    }
+
+    // ---------- encrypted identity backup ----------
+
+    case 'backup.export': {
+      const status = await keystore.status();
+      if (!status.hasKey) throw err('no_key');
+      return await keystore.exportBackup(String(msg.password ?? ''), String(msg.repeat ?? ''));
+    }
+
+    case 'backup.import': {
+      const status = await keystore.status();
+      if (!status.hasKey) {
+        // Importing into an empty store is fine, no key needed.
+      }
+      await stopSigner();
+      signerCore.reset();
+      const res = await keystore.importBackup(String(msg.text ?? ''), String(msg.password ?? ''), {
+        replace: msg.replace === true,
+      });
+      await bootSigner();
+      return res;
     }
 
     case 'identity.remove': {
@@ -836,6 +861,7 @@ async function handleApprovalPage(msg) {
         scheme: p.req.scheme ?? '',
         peer: p.req.peer ?? '',
         payload: p.req.payload ?? '',
+        duplicateName: p.req.duplicateName === true,
       };
     }
     case 'decide': {

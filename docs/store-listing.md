@@ -47,6 +47,8 @@ WHAT IT DOES
   per-identity sessions and profile.
 • Public profile (kind 0) editor: name, display name, about, picture,
   NIP-05 and lightning address, published to your relays.
+• Encrypted backup of all identities in one passphrase-protected file, and a
+  warning when the same client name is connected twice (two devices).
 • Identity export as QR codes (npub openly, nsec only after an explicit
   confirmation) to move an identity to a phone.
 • Audit log of the last answered requests (method, client, result) — no

@@ -43,6 +43,27 @@
         </div>
         <p id="identity-error" class="error" hidden></p>
       </div>
+
+      <hr class="sep">
+      <h3 data-i18n="backupIdentitiesHeading"></h3>
+      <p class="hint" data-i18n="backupIdentitiesHint"></p>
+      <div class="grid">
+        <div>
+          <label class="flabel" for="backup-password" data-i18n="backupPassphrase"></label>
+          <input id="backup-password" class="field" type="password" autocomplete="new-password">
+        </div>
+        <div>
+          <label class="flabel" for="backup-password2" data-i18n="backupPassphraseRepeat"></label>
+          <input id="backup-password2" class="field" type="password" autocomplete="new-password">
+        </div>
+      </div>
+      <div class="row">
+        <button id="btn-backup-export" data-i18n="btnBackupExport"></button>
+        <button id="btn-backup-import" data-i18n="btnBackupImport"></button>
+        <input id="backup-file" type="file" accept=".json,application/json" hidden>
+      </div>
+      <p id="backup-status" class="hint" hidden></p>
+      <p id="backup-error" class="error" hidden></p>
     </section>
 
     <section class="card" id="card-profile">

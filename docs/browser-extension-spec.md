@@ -308,6 +308,14 @@ grunq_signer:audit         [ { ts, scope: 'nip46'|'nip07', method,
   `nip44_decrypt` brauchen je Anfrage eine Bestätigung (Inhalt-Anfang
   wird angezeigt) – verhindert das Abfischen gestohlener Ciphertexte
   über eine gebundene Session.
+- **Backup (umgesetzt):** `src/lib/bundle.js` versiegelt alle Identitäten
+  (Bezeichnung, Pubkey, Secret im gespeicherten Zustand) mit einer
+  Passphrase zu einer JSON-Datei (scrypt + XChaCha20-Poly1305, gleiche
+  Primitive wie NIP-49); Export/Import in der Options-Seite, Import
+  merged per Pubkey und überspringt Duplikate (`invalid_backup`,
+  `wrong_password`). Nichts wird hochgeladen; die Datei ist nur so sicher
+  wie die Passphrase, verschlüsselte Identitäten bleiben darin
+  verschlüsselt.
 - **Relays:** globale Allowlist; Session-Relays aus der nostrconnect-URI
   nur akzeptieren, wenn sie in der Allowlist stehen oder der Nutzer sie
   einzeln bestätigt. Kein Klartext-Telemetrie-Event.
@@ -458,8 +466,12 @@ laufen unverändert im Knoten, siehe auch GQ-03.)
   liegt, ohne einen zentralen Nutzer-Account einzuführen?
 - Verhalten bei Multi-Gerät mit derselben Identität (Extension am Desktop,
   Signer-App am Handy): Konfliktauflösung in NIP-46 ist offiziell offen —
-  Grunq-Knoten verbindet nur eine Session; doppelte Kopplung mit Hinweis
-  blockieren.
+  Grunq-Knoten verbindet nur eine Session. **Umgesetzt (17.11.2026):**
+  Statt zu blockieren warnt die Extension — der Pairing-Dialog markiert
+  einen neuen Client, dessen Name bereits verbunden ist
+  (`duplicateName`), und die Sitzungsliste der Options-Seite zeigt
+  „mehrfach" bei doppelten Namen. Zwei Signer für eine npub überschreiben
+  sich sonst gegenseitig Ankündigungen.
 
 ## 13. Verbreitung und Nutzung durch Dritte
 

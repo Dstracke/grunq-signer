@@ -103,12 +103,14 @@ async function init() {
       info.origin || '?',
       (info.relays ?? []).join(' ') || '–',
     ]);
+    if (info.duplicateName) content.append(...duplicateWarning());
     hideAlways();
   } else if (info.kind === 'nip46-connect') {
     content.textContent = t('nip46ConnectIntro', [
       clientLabel(info),
       info.clientNpub || shortPub(info.clientPub),
     ]);
+    if (info.duplicateName) content.append(...duplicateWarning());
     hideAlways();
   } else if (info.kind === 'nip46-decrypt') {
     const payload = String(info.payload ?? '');
@@ -124,6 +126,15 @@ async function init() {
     hideAlways();
   }
   document.getElementById('actions').hidden = false;
+}
+
+// Appended to pairing dialogs when a client with the same name is already
+// connected (likely the same identity on a second device).
+function duplicateWarning() {
+  const wrap = document.createElement('div');
+  wrap.className = 'duplicate-warning';
+  wrap.textContent = t('duplicateClientWarning');
+  return [document.createElement('br'), wrap];
 }
 
 function shortPub(pub) {

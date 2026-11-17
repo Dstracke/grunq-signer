@@ -174,3 +174,15 @@ button.danger:hover {
   margin: 10px 0 0;
   font-size: 12px;
 }
+
+/* Warning shown when a client name is already connected (multi-device). */
+.duplicate-warning {
+  margin-top: 10px;
+  padding: 9px 12px;
+  border-left: 3px solid var(--pink, #ff3d81);
+  border-radius: 6px;
+  background: rgba(255, 61, 129, 0.12);
+  color: #ffc04a;
+  font-size: 12.5px;
+  line-height: 1.5;
+}

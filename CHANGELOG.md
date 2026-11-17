@@ -36,6 +36,11 @@ First public release. A browser extension that is both a NIP-07 provider
   NIP-09 deletion; re-publishes on start to relays that lost the profile.
 - **QR export** of npub (public) and nsec (behind an explicit two-step
   confirmation) to move an identity to a phone.
+- **Encrypted backup**: all identities (labels + keys) in one
+  passphrase-sealed file; import merges by public key.
+- **Multi-device warning**: the pairing dialog and the session list flag two
+  connected clients with the same name (likely the same identity on a second
+  device) so they do not overwrite each other's announcements.
 - **Audit log** of the last answered requests (method, client, time,
   result) with per-source filtering; no message contents.
 - **Options page** for identities, profile, pairing, relays, approvals

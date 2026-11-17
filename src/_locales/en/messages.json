@@ -290,6 +290,58 @@
   "btnAddIdentitySave": {
     "message": "Add"
   },
+  "backupIdentitiesHeading": {
+    "message": "Backup all identities"
+  },
+  "backupIdentitiesHint": {
+    "message": "Exports every identity (labels + keys) into one passphrase-protected file. The file is only as safe as the passphrase; encrypted identities stay encrypted inside it. For an import, enter the backup's passphrase in the first field and pick the file."
+  },
+  "backupPassphrase": {
+    "message": "Passphrase for the backup"
+  },
+  "backupPassphraseRepeat": {
+    "message": "Repeat (for export)"
+  },
+  "btnBackupExport": {
+    "message": "Export backup"
+  },
+  "btnBackupImport": {
+    "message": "Import backup…"
+  },
+  "backupExported": {
+    "message": "Backup with $COUNT$ identity/ies downloaded.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "backupImported": {
+    "message": "$ADDED$ added, $SKIPPED$ already present.",
+    "placeholders": {
+      "added": {
+        "content": "$1"
+      },
+      "skipped": {
+        "content": "$2"
+      }
+    }
+  },
+  "backupPassphraseNeeded": {
+    "message": "Enter the backup passphrase first."
+  },
+  "errorInvalidBackup": {
+    "message": "This is not a Grunq Signer backup file."
+  },
+  "duplicateClientWarning": {
+    "message": "A client with this name is already connected. If this is the same identity on another device, only one of them should sign — two signers for one npub overwrite each other's announcements."
+  },
+  "multiDeviceChip": {
+    "message": "multiple"
+  },
+  "multiDeviceHint": {
+    "message": "Another connection with the same name exists — possibly the same identity on a second device."
+  },
   "identityUnnamed": {
     "message": "Unnamed identity"
   },

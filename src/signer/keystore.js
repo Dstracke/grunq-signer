@@ -29,6 +29,7 @@ import {
   decrypt as nip49Decrypt,
   encrypt as nip49Encrypt,
 } from '../lib/nip49.js';
+import { openBundleText, sealBundle } from '../lib/bundle.js';
 
 export const IDENTITIES_STORE = 'grunq_signer:identities';
 export const UNLOCK_STORE = 'grunq_signer:unlock'; // session storage, memory only
@@ -158,6 +159,13 @@ export function createKeystore(env) {
     delete map[id];
     await session.set(UNLOCK_STORE, map);
     return true;
+  }
+
+  // Secrets accepted from a backup file: a plaintext key or an ncryptsec.
+  function validSecret(secret) {
+    if (!secret || typeof secret !== 'object') return false;
+    if (typeof secret.privHex === 'string' && /^[0-9a-f]{64}$/.test(secret.privHex)) return true;
+    return typeof secret.ncryptsec === 'string' && /^ncryptsec1[02-9ac-hj-np-z]+$/.test(secret.ncryptsec);
   }
 
   function checkPassword(password, repeat) {
@@ -396,6 +404,73 @@ export function createKeystore(env) {
       const item = activeItem(await db());
       if (!item?.secret.ncryptsec) return null;
       return { ncryptsec: item.secret.ncryptsec };
+    },
+
+    /**
+     * Everything (labels, keys in their stored form) in one passphrase-sealed
+     * file. The file is only as safe as the passphrase: plaintext identities
+     * stay plaintext inside the sealed payload.
+     */
+    async exportBackup(password, repeat) {
+      checkPassword(password, repeat);
+      const database = await db();
+      const payload = {
+        kind: 'grunq-signer-identities',
+        version: 2,
+        exportedAt: now(),
+        active: database.active,
+        items: database.items.map((item) => ({
+          label: item.label || '',
+          pubkey: item.pubkey,
+          created: item.created,
+          secret: { ...item.secret },
+        })),
+      };
+      const file = sealBundle(payload, password, { logN });
+      await api.touch();
+      return { file, count: payload.items.length };
+    },
+
+    /**
+     * Merge a backup file into the store (duplicates by pubkey are skipped);
+     * `replace` clears the current identities first. Imported encrypted
+     * identities stay locked until their own passphrase is entered.
+     */
+    async importBackup(text, password, options = {}) {
+      const payload = openBundleText(text, password); // throws wrong_password
+      if (payload?.kind !== 'grunq-signer-identities' || !Array.isArray(payload.items)) {
+        throw fail('invalid_backup');
+      }
+      const database = await db();
+      if (options.replace) {
+        database.items = [];
+        database.active = null;
+      }
+      let added = 0;
+      let skipped = 0;
+      for (const raw of payload.items) {
+        if (!raw || typeof raw.pubkey !== 'string' || !/^[0-9a-f]{64}$/.test(raw.pubkey)) continue;
+        if (!validSecret(raw.secret)) continue;
+        if (database.items.some((i) => i.pubkey === raw.pubkey)) {
+          skipped += 1;
+          continue;
+        }
+        // A plaintext key must actually belong to the stored pubkey.
+        if (raw.secret.privHex && derivePubkeyHex(raw.secret.privHex) !== raw.pubkey) continue;
+        database.items.push({
+          id: newId(),
+          label: typeof raw.label === 'string' ? raw.label.slice(0, 40) : '',
+          pubkey: raw.pubkey,
+          created: Number.isFinite(raw.created) ? raw.created : now(),
+          secret: { ...raw.secret },
+        });
+        added += 1;
+      }
+      if (!database.active && database.items.length > 0) {
+        database.active = database.items[database.items.length - 1].id;
+      }
+      await writeDb(database);
+      return { added, skipped, count: database.items.length };
     },
 
     /** Remove the active identity; falls back to the most recent remaining one. */

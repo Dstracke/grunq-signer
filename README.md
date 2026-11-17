@@ -42,7 +42,8 @@ NIP-07 provider (`window.nostr`) and a NIP-46 remote signer (bunker).
   `ncryptsec` backup. Remembered NIP-46 permissions expire after 30 minutes
   idle; repeated failed pairings are rate-limited (5 per 10 minutes).
 - **Multiple identities** with per-identity sessions and profile; public
-  kind-0 profile editor with relay publishing and NIP-09 deletion.
+  kind-0 profile editor with relay publishing and NIP-09 deletion; an
+  encrypted backup file for all identities (export/import).
 - **Audit log**, options page, de/en UI following the browser language.
 
 `npm run package` produces the store artifact

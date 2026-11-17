@@ -358,6 +358,47 @@ test('core: repeated denied secretless connects stop opening windows', async () 
   assert.equal(approvals.length, windows, 'no further approval window while blocked');
 });
 
+test('core: pairing warns when a client with the same name is already connected', async () => {
+  const approvals = [];
+  const env = fakeEnv({
+    requestApproval: async (info) => {
+      approvals.push(info);
+      return 'allow';
+    },
+  });
+  const core = createSignerCore(env);
+  await core.start();
+  const invite = await core.createInvite();
+  const first = makeClient();
+  await requestViaCore(env, core, first, 'connect', [
+    env.pub,
+    invite.secret,
+    '',
+    '{"name":"Grunq-Knoten"}',
+  ]);
+  // A reconnect of the same client key needs no dialog and must not warn.
+  const before = approvals.length;
+  await requestViaCore(env, core, first, 'connect', [env.pub, invite.secret, '', '{"name":"Grunq-Knoten"}']);
+  assert.equal(approvals.length, before);
+
+  // Same name from a different client key (second device) -> warning flag.
+  const second = makeClient();
+  await requestViaCore(env, core, second, 'connect', [
+    env.pub,
+    '',
+    '',
+    '{"name":"Grunq-Knoten"}',
+  ]);
+  const dialog = approvals.at(-1);
+  assert.equal(dialog.kind, 'nip46-connect');
+  assert.equal(dialog.duplicateName, true);
+
+  // A different name does not warn.
+  const third = makeClient();
+  await requestViaCore(env, core, third, 'connect', [env.pub, '', '', '{"name":"Other"}']);
+  assert.equal(approvals.at(-1).duplicateName, false);
+});
+
 test('core: "always" decision stores a per-kind sign permission', async () => {
   const env = fakeEnv();
   const approvals = [];
