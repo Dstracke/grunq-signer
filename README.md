@@ -39,7 +39,8 @@ NIP-07 provider (`window.nostr`) and a NIP-46 remote signer (bunker).
   per-kind permissions and a decrypt gate.
 - **Key protection**: optional NIP-49 passphrase encryption (`ncryptsec`),
   keys in memory only, auto-lock after inactivity, QR export of npub/nsec,
-  `ncryptsec` backup.
+  `ncryptsec` backup. Remembered NIP-46 permissions expire after 30 minutes
+  idle; repeated failed pairings are rate-limited (5 per 10 minutes).
 - **Multiple identities** with per-identity sessions and profile; public
   kind-0 profile editor with relay publishing and NIP-09 deletion.
 - **Audit log**, options page, de/en UI following the browser language.

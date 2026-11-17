@@ -19,6 +19,7 @@ import {
 import { createKeystore, profileKey, sessionsKey } from '../signer/keystore.js';
 import { createProfileService, PROFILE_STORE, planRepublish } from '../signer/profile.js';
 import { createAuditLog } from '../signer/audit.js';
+import { createRateLimiter } from '../lib/ratelimit.js';
 
 const api = globalThis.browser ?? globalThis.chrome;
 
@@ -39,6 +40,7 @@ function err(code) {
     weak_password: 'errorWeakPassword',
     password_mismatch: 'errorPasswordMismatch',
     denied: 'errorDenied',
+    rate_limited: 'errorRateLimited',
     invalid_input: 'errorInvalidInput',
     no_permission: 'errorNoPermission',
     internal: 'errorInternal',
@@ -132,6 +134,10 @@ const profileTransport = {
 };
 
 const auditLog = createAuditLog({ storage: { get: getStore, set: setStore } });
+
+// Pairing attempts are additionally throttled per page origin (the signer
+// core throttles per client pubkey).
+const pairingLimiter = createRateLimiter({ limit: 5, windowMs: 10 * 60 * 1000 });
 
 // NIP-07 calls worth showing in the audit log (a chat page polls
 // getPublicKey, that would only add noise).
@@ -489,15 +495,22 @@ async function handleWebNostrConnect(msg, sender) {
   if (!status.hasKey) throw err('no_key');
   if (status.encrypted && !status.unlocked) throw err('locked');
   if (webPairBusy) throw { code: 'busy', message: t('errorPairBusy') };
+  if (pairingLimiter.isBlocked(origin)) {
+    throw { code: 'rate_limited', message: t('errorRateLimited') };
+  }
   webPairBusy = true;
   try {
-    return await signerCore.connectNostrConnect(msg.uri, { origin });
+    const res = await signerCore.connectNostrConnect(msg.uri, { origin });
+    pairingLimiter.reset(origin);
+    return res;
   } catch (e) {
+    if (e?.nip46Code !== 'rate_limited') pairingLimiter.fail(origin);
     if (e?.nip46Code) {
       const map = {
         session_limit: 'nip46ErrorSessionLimit',
         no_relays: 'nip46ErrorNoRelays',
         unauthorized: 'nip46ErrorDenied',
+        rate_limited: 'errorRateLimited',
         invalid_request: 'errorInvalidInput',
       };
       throw { code: e.nip46Code, message: t(map[e.nip46Code] ?? 'errorInternal') };
@@ -515,6 +528,7 @@ function popupError(e) {
   if (e?.code && e?.nip46Code === e.code) {
     const map = {
       locked: 'errorLocked',
+      rate_limited: 'errorRateLimited',
       session_limit: 'nip46ErrorSessionLimit',
       no_relays: 'nip46ErrorNoRelays',
       unauthorized: 'nip46ErrorDenied',
@@ -663,11 +677,16 @@ async function handlePopup(msg) {
       if (typeof msg.uri !== 'string' || !msg.uri.trim().startsWith('nostrconnect:')) {
         throw err('invalid_input');
       }
+      const key = 'options';
+      if (pairingLimiter.isBlocked(key)) throw err('rate_limited');
       try {
-        return await signerCore.connectNostrConnect(msg.uri.trim(), {
+        const res = await signerCore.connectNostrConnect(msg.uri.trim(), {
           origin: t('pairSourceOptions'),
         });
+        pairingLimiter.reset(key);
+        return res;
       } catch (e) {
+        if (e?.nip46Code !== 'rate_limited') pairingLimiter.fail(key);
         popupError(e);
       }
     }

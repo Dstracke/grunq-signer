@@ -188,7 +188,11 @@ Adapter-Layer `bg-runtime` (API-Unterschiede: SW-Lifecycle siehe §5.2,
      aktiven Sessions neu verbinden (Relays, Filter mit `since = now`).
   2. Keepalive: periodisches kurzes `ping`-Relay-Poll alle ≤ 25 s solange
      eine Session „aktiv" ist; Idle-Sessions (keine Client-Anfragen für
-     `idle_minutes`, Standard 30) werden bewusst geschlossen.
+     30 min, `SESSION_IDLE_MS`) verlieren ihre **gemerkten Permissions**
+     (umgesetzt in `tick()`). Die Bindung samt Secret bleibt bestehen,
+     damit `nostrconnect`-/`bunker`-Clients ohne Re-Pairing weiter
+     reconnecten können — die nächste Signatur fragt einmal wieder, ein
+     „immer erlauben" greift erneut.
   3. Benachrichtigungsoption: bei eingehender Anfrage in beendetem SW
      kann der Client einen Retry erwarten — Clients (und Grunq-Knoten,
      siehe ResilientStreamerSigner) kennen bereits Retry/Backoff; die
@@ -199,7 +203,8 @@ Adapter-Layer `bg-runtime` (API-Unterschiede: SW-Lifecycle siehe §5.2,
   Relays, erstellt/am, zuletzt aktiv, erlaubte Methoden, Auto-Approve-
   Policy (Kinds-Whitelist oder „immer fragen").
 - Limits orientieren sich an GQ-03: max. 16 Sessions, 10 min Bestätigungs-
-  Fenster beim Pairing, 30 min Idle; nicht bestätigte Pairings verfallen.
+  Fenster beim Pairing (`INVITE_TTL_MS`), 30 min Idle für gemerkte
+  Permissions (`SESSION_IDLE_MS`); nicht bestätigte Pairings verfallen.
 
 ### 5.3 Methoden (NIP-46)
 
@@ -287,8 +292,13 @@ grunq_signer:audit         [ { ts, scope: 'nip46'|'nip07', method,
   Kein `auth_url`-Popup (§5.3).
 - **Pairing-Missbrauch:** nostrconnect-Secrets sind einmalig und kurz
   gültig; Sessions sind widerrufbar (Liste im Popup); unbekannte Clients
-  erhalten nach Ablehnung kein Retry-Fenster (Rate-Limit auf Pairing-
-  Versuche). **Secret-lose `bunker://`-Connects** (der Grunq-Knoten
+  erhalten nach Ablehnung kein Retry-Fenster. **Rate-Limit (umgesetzt):**
+  `src/lib/ratelimit.js` zählt Fehlversuche gleitend über 10 Minuten —
+  fünf pro Client-Pubkey (Signer-Core: `connect`/`connectNostrConnect`)
+  und fünf pro Seiten-Origin (Background: Web-Bridge und Options-Link);
+  danach antwortet der Signer mit `error:rate_limited`, ohne ein
+  Bestätigungsfenster zu öffnen. Ein erfolgreicher Connect setzt den
+  Zähler zurück. **Secret-lose `bunker://`-Connects** (der Grunq-Knoten
   speichert nach nostrconnect-Pairing eine URI ohne Secret und
   reconnectet nach Neustart mit leerem Secret) erzeugen eine
   Bestätigungsfrage pro neuem Client-Key; der dafür vorgesehene

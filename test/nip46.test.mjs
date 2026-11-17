@@ -7,6 +7,8 @@ import { randomBytes, bytesToHex } from '@noble/hashes/utils.js';
 
 import {
   createSignerCore,
+  PAIRING_FAIL_LIMIT,
+  SESSION_IDLE_MS,
   SESSIONS_STORE,
   SETTINGS_STORE,
   buildBunkerUri,
@@ -277,6 +279,83 @@ test('core: every answered request produces an audit entry', async () => {
   assert.equal(audit[3].code, 'unauthorized');
   assert.equal(audit[3].kind, 1);
   assert.equal(audit[2].clientName, 'MiniClient', 'connect resolves the client name');
+});
+
+test('core: remembered permissions expire after 30 minutes idle', async () => {
+  let clock = 1_700_000_000_000;
+  const approvals = [];
+  const env = fakeEnv({
+    now: () => clock,
+    requestApproval: async (info) => {
+      approvals.push(info);
+      return 'always';
+    },
+  });
+  const core = createSignerCore(env);
+  await core.start();
+  const invite = await core.createInvite();
+  const client = makeClient();
+  await requestViaCore(env, core, client, 'connect', [env.pub, invite.secret, '', '']);
+  const sign = () =>
+    requestViaCore(env, core, client, 'sign_event', [
+      JSON.stringify({ kind: 1311, content: 'chat', created_at: 1, tags: [] }),
+    ]);
+
+  await sign();
+  assert.equal(approvals.length, 1, 'first signature asks once');
+  await sign();
+  assert.equal(approvals.length, 1, 'permission is remembered');
+
+  // Below the idle window nothing changes.
+  clock += SESSION_IDLE_MS - 60 * 1000;
+  await core.tick();
+  await sign();
+  assert.equal(approvals.length, 1);
+
+  // Above the idle window the permission is dropped (session stays).
+  clock += SESSION_IDLE_MS + 60 * 1000;
+  await core.tick();
+  await sign();
+  assert.equal(approvals.length, 2, 'asks again after the idle timeout');
+  await sign();
+  assert.equal(approvals.length, 2, '"always" remembered it again');
+});
+
+test('core: repeated denied secretless connects stop opening windows', async () => {
+  const approvals = [];
+  let decision = 'deny';
+  const env = fakeEnv({
+    requestApproval: async (info) => {
+      approvals.push(info);
+      return decision;
+    },
+  });
+  const core = createSignerCore(env);
+  await core.start();
+  await core.createInvite(); // only so the signer has relays configured
+  const client = makeClient();
+
+  // Below the limit a granted connect still works and binds the client.
+  for (let i = 0; i < PAIRING_FAIL_LIMIT - 1; i++) {
+    const resp = await requestViaCore(env, core, client, 'connect', [env.pub, '', '', '']);
+    assert.ok(resp.error, 'denied connect answers with an error');
+  }
+  assert.equal(approvals.length, PAIRING_FAIL_LIMIT - 1);
+  decision = 'allow';
+  const ok = await requestViaCore(env, core, client, 'connect', [env.pub, '', '', '']);
+  assert.equal(ok.result, 'ack');
+  await core.revoke(/* id: not needed here */ (await core.listSessions())[0].id);
+
+  // A fresh client now burns through its attempts and gets blocked.
+  decision = 'deny';
+  const stranger = makeClient();
+  for (let i = 0; i < PAIRING_FAIL_LIMIT; i++) {
+    await requestViaCore(env, core, stranger, 'connect', [env.pub, '', '', '']);
+  }
+  const windows = approvals.length;
+  const blocked = await requestViaCore(env, core, stranger, 'connect', [env.pub, '', '', '']);
+  assert.match(String(blocked.error), /rate_limited/);
+  assert.equal(approvals.length, windows, 'no further approval window while blocked');
 });
 
 test('core: "always" decision stores a per-kind sign permission', async () => {

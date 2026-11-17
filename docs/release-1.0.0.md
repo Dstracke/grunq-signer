@@ -18,7 +18,7 @@ npm run package   # -> web-ext-artifacts/grunq_signer-1.0.0.zip
 |---|---|
 | Datei | `web-ext-artifacts/grunq_signer-1.0.0.zip` |
 | Größe | 164 KB (30 Dateien, `manifest.json` im ZIP-Root) |
-| SHA-256 | `1fc3dd80e504de7749483928fd7988b289a83297aedd3a7f459ed89225c86f1a` |
+| SHA-256 | `13d548d7ae5f2679c4d173b7b8badb73b9e1a59655ef44fa342e1e843921ceb0` |
 | Add-on-ID | `signer@grunq.com` |
 | Lizenz | AGPL-3.0 |
 | Datenschutz | https://grunq.com/grunq-signer/privacy.html (DE: `/datenschutz.html`) |

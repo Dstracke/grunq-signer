@@ -24,6 +24,11 @@ First public release. A browser extension that is both a NIP-07 provider
   after a browser restart; export of the `ncryptsec` backup (text + QR).
 - **Auto-lock** after inactivity (configurable, can be disabled); real
   NIP-07/NIP-46 traffic counts as activity.
+- **Session idle policy**: remembered per-kind permissions expire after 30
+  minutes without traffic (the paired session stays, the next signature asks
+  once again).
+- **Pairing rate limit**: five failed pairing/connect attempts per client or
+  page within ten minutes stop further approval windows.
 - **Multiple identities** with labels, per-identity NIP-46 sessions and
   profile; switching restarts the signer with the new key.
 - **Public profile editor** (kind 0: name, display_name, about, picture,

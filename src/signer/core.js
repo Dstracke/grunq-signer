@@ -32,6 +32,7 @@ import {
   nip44Encrypt,
 } from '../lib/signing.js';
 import { normalizeRelayList } from '../lib/relay-pool.js';
+import { createRateLimiter } from '../lib/ratelimit.js';
 
 export const REQUEST_KIND = 24133;
 
@@ -41,6 +42,14 @@ export const SETTINGS_STORE = 'grunq_signer:settings';
 export const MAX_SESSIONS = 16;
 export const INVITE_TTL_MS = 10 * 60 * 1000; // unpaired invitations expire
 export const DEFAULT_RELAYS = ['wss://relay.grunq.com'];
+// Spec §5.2: after 30 minutes without traffic a session's remembered
+// permissions are dropped (the binding and its secret stay valid, so clients
+// keep reconnecting; the next signature simply asks again).
+export const SESSION_IDLE_MS = 30 * 60 * 1000;
+// Pairing abuse guard: five failed connects/pairings per client or page
+// within ten minutes stop further approval windows.
+export const PAIRING_FAIL_LIMIT = 5;
+export const PAIRING_FAIL_WINDOW_MS = 10 * 60 * 1000;
 
 const err = (code, message) => {
   const e = new Error(message ?? code);
@@ -87,6 +96,11 @@ export function createSignerCore(env) {
   let started = false;
   /** @type {{close: Function}[]} */
   let subHandles = [];
+  const pairingLimiter = createRateLimiter({
+    limit: PAIRING_FAIL_LIMIT,
+    windowMs: PAIRING_FAIL_WINDOW_MS,
+    now,
+  });
   /** @type {object[]|null} */
   let sessionsCache = null;
 
@@ -255,7 +269,10 @@ export function createSignerCore(env) {
         }
         if (typeof secret === 'string' && secret) {
           const token = sessions.find((s) => s.secret === secret);
-          if (!token) throw err('unauthorized', 'unknown secret');
+          if (!token) {
+            pairingLimiter.fail(clientPub);
+            throw err('unauthorized', 'unknown secret');
+          }
           // Rebind: bunker clients regenerate ephemeral keys on reconnect.
           token.clientPub = clientPub;
           token.bound = true;
@@ -263,6 +280,7 @@ export function createSignerCore(env) {
           token.clientName = parseClientName(metadata);
           token.lastActive = now();
           await saveSessions();
+          pairingLimiter.reset(clientPub);
           return 'ack';
         }
         // Secretless connect: the Grunq node stores bunker:// URIs WITHOUT
@@ -274,6 +292,9 @@ export function createSignerCore(env) {
         let token = sessionForClient(sessions, clientPub);
         if (!token) {
           if (settings.relays.length === 0) throw err('no_relays');
+          // A client that keeps failing the approval must not keep popping
+          // dialogs (relays are public, anyone can send connect requests).
+          if (pairingLimiter.isBlocked(clientPub)) throw err('rate_limited');
           // Every new client key needs an explicit approval - including the
           // slot-reuse path below, so a stranger cannot silently take over
           // the provisional slot of a restarted client.
@@ -282,7 +303,11 @@ export function createSignerCore(env) {
             clientName: parseClientName(metadata),
             clientPub,
           });
-          if (decision !== 'allow') throw err('unauthorized', 'connection denied');
+          if (decision !== 'allow') {
+            pairingLimiter.fail(clientPub);
+            throw err('unauthorized', 'connection denied');
+          }
+          pairingLimiter.reset(clientPub);
           if (sessions.filter((s) => s.bound).length >= MAX_SESSIONS) {
             // Slot reuse frees one, so re-check with the provisional
             // candidate excluded.
@@ -530,13 +555,26 @@ export function createSignerCore(env) {
       await refreshSubscriptions();
     },
 
-    /** Alarm hook: prune expired invitations. */
+    /**
+     * Alarm hook: prune expired invitations and drop remembered permissions of
+     * sessions that were idle for longer than SESSION_IDLE_MS. The session
+     * binding (and its secret) stays, so clients simply ask again next time.
+     */
     async tick() {
       const sessions = await loadSessions();
-      const cutoff = now() - INVITE_TTL_MS;
+      const inviteCutoff = now() - INVITE_TTL_MS;
+      const idleCutoff = now() - SESSION_IDLE_MS;
       const before = sessions.length;
-      const kept = sessions.filter((s) => s.bound || s.created > cutoff);
-      if (kept.length !== before) {
+      const kept = sessions.filter((s) => s.bound || s.created > inviteCutoff);
+      let changed = kept.length !== before;
+      for (const s of kept) {
+        if (!s.bound || !s.perms) continue;
+        if ((s.lastActive ?? s.created) >= idleCutoff) continue;
+        s.perms = '';
+        changed = true;
+        log('nip46 session permissions expired', s.clientPub);
+      }
+      if (changed) {
         sessionsCache = kept;
         await saveSessions();
         await refreshSubscriptions();
@@ -556,6 +594,7 @@ export function createSignerCore(env) {
       if (!existing && sessions.filter((s) => s.bound).length >= MAX_SESSIONS) {
         throw err('session_limit');
       }
+      if (pairingLimiter.isBlocked(info.clientPub)) throw err('rate_limited');
       const decision = await requestApproval({
         kind: 'nip46-nostrconnect',
         clientName: info.name,
@@ -563,7 +602,10 @@ export function createSignerCore(env) {
         relays: info.relays,
         origin: typeof meta.origin === 'string' ? meta.origin : '',
       });
-      if (decision !== 'allow') throw err('unauthorized', 'connection denied');
+      if (decision !== 'allow') {
+        pairingLimiter.fail(info.clientPub);
+        throw err('unauthorized', 'connection denied');
+      }
       const token = existing ?? {
         secret: info.secret,
         relays: [...info.relays],
@@ -585,6 +627,7 @@ export function createSignerCore(env) {
       sessionsCache = sessions;
       await saveSessions();
       await refreshSubscriptions();
+      pairingLimiter.reset(info.clientPub);
       // Grunq node semantics (pkg/nip46 bridge.go handleResponse): in
       // nostrconnect mode the client considers itself paired when it
       // receives a response whose `result` equals the URI secret, so the

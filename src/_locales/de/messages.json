@@ -107,6 +107,9 @@
   "errorWrongPassword": {
     "message": "Falsche Passphrase."
   },
+  "errorRateLimited": {
+    "message": "Zu viele Fehlversuche. Warte ein paar Minuten und versuche es erneut."
+  },
   "errorWeakPassword": {
     "message": "Die Passphrase braucht mindestens 8 Zeichen."
   },
