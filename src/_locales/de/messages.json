@@ -245,6 +245,67 @@
   "optionsHint": {
     "message": "Änderungen wirken sofort. Im Popup bleiben die Schnellaktionen: Entsperren, QR-Export und Bunker-Einladungen."
   },
+  "pairHeading": {
+    "message": "Kopplung"
+  },
+  "pairHint": {
+    "message": "Füge eine nostrconnect://- oder bunker://-Einladung eines anderen Programms ein oder öffne diese Seite als options/options.html?nostrconnect=… – die Bestätigung zeigt die Extension in ihrem eigenen Dialog."
+  },
+  "btnPair": {
+    "message": "Koppeln"
+  },
+  "pairSourceOptions": {
+    "message": "Einstellungsseite (Link)"
+  },
+  "pairOk": {
+    "message": "Gekoppelt mit $NPUB$.",
+    "placeholders": {
+      "npub": {
+        "content": "$1"
+      }
+    }
+  },
+  "identitiesHeading": {
+    "message": "Identitäten"
+  },
+  "identitiesHint": {
+    "message": "Jede Identität ist ein eigener Nostr-Schlüssel – z. B. einer zum Streamen und einer für den Chat. Websites, Bunker-Clients und das Profil folgen immer der aktiven Identität; Sitzungen und Profil werden je Identität getrennt gespeichert."
+  },
+  "identitiesNone": {
+    "message": "Noch keine Identitäten."
+  },
+  "btnAddIdentity": {
+    "message": "Identität hinzufügen"
+  },
+  "identityLabel": {
+    "message": "Bezeichnung (optional, z. B. Streamer oder Chat)"
+  },
+  "identitySecret": {
+    "message": "nsec1… oder ncryptsec1… (Passphrase unten bei ncryptsec)"
+  },
+  "btnAddIdentitySave": {
+    "message": "Hinzufügen"
+  },
+  "identityUnnamed": {
+    "message": "Unbenannte Identität"
+  },
+  "identityActive": {
+    "message": "aktiv"
+  },
+  "btnActivate": {
+    "message": "Aktivieren"
+  },
+  "btnRemoveIdentity": {
+    "message": "Entfernen"
+  },
+  "confirmRemoveIdentity": {
+    "message": "Identität „$LABEL$“ aus der Extension entfernen? Verbindungen und Profil dieser Identität sind danach weg; ohne Backup ist der Schlüssel verloren.",
+    "placeholders": {
+      "label": {
+        "content": "$1"
+      }
+    }
+  },
   "optionsNoIdentity": {
     "message": "Noch keine Identität eingerichtet. Öffne das Popup der Extension, um eine zu importieren oder zu erstellen."
   },

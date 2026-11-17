@@ -27,15 +27,17 @@ keepalive alarm, test-suite end-to-end against a real relay with a mini
 NIP-46 client. M3 started: `nostrconnect://` pairing from web pages,
 per-kind sign approvals and the decrypt gate are done, plus **identity
 export as QR** (npub public, nsec behind a two-step confirmation) to move
-an identity onto a phone. **Passphrase protection (NIP-49) and auto-lock
-are implemented**: the popup encrypts the key with a passphrase
+an identity onto a phone. **Multiple identities with switching**,
+**passphrase protection (NIP-49)** and **auto-lock** are implemented: the popup encrypts the key with a passphrase
 (`ncryptsec`), keeps only the session key in memory, locks automatically
 after the configured idle time and exports the `ncryptsec` as a backup QR.
 The **options page** (extension settings, "Settings" in the popup) holds the
-profile editor, the relay list, site approvals with per-kind revoke, bunker
-sessions and an **audit log** of the last answered requests. The profile is
-**re-published on start** to relays that lost it ("Check relays" forces the
-repair).
+identity list, the profile editor, pairing, the relay list, site approvals
+with per-kind revoke, bunker sessions and an **audit log** of the last
+answered requests. The profile is **re-published on start** to relays that
+lost it ("Check relays" forces the repair). **Multiple identities** (e.g.
+streamer + chat) can live side by side; the active one is what sites and
+bunker clients see.
 
 The full specification lives in
 [`docs/browser-extension-spec.md`](docs/browser-extension-spec.md)
@@ -105,9 +107,13 @@ The popup keeps the quick actions (unlock, QR export, invitations); the
 options page (**Settings** in the popup header, or the browser's extension
 settings) holds the writable parts:
 
-- **Profile** — the public kind-0 event broadcast live as a notification and
-  also published to the relay list; publishing/deleting requires an unlocked
-  identity.
+- **Identities** — add (`nsec`/`ncryptsec` + label) or create another key,
+  activate it, remove it. Sessions and the profile are kept per identity;
+  switching stops and restarts the NIP-46 signer with the new key.
+- **Profile** — the public kind-0 event of the active identity, published to
+  the relay list; publishing/deleting requires an unlocked identity.
+- **Pairing** — paste a `nostrconnect://` invitation, or open the page as
+  `options/options.html?nostrconnect=…` for a prefilled pairing card.
 - **Relays** — the allow-list used for invitations, NIP-07 `getRelays` and
   profile publishes.
 - **Site approvals** — each origin with the event kinds it may sign without

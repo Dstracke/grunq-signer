@@ -1,13 +1,21 @@
-// Key store: plaintext (Stufe 1, browser standard) or NIP-49-encrypted
-// (ncryptsec) with the decrypted key kept in extension session storage only.
+// Key store: one or more identities, each with a label, its own public key and
+// either a plaintext secret (Stufe 1) or a NIP-49 `ncryptsec`. Exactly one
+// identity is active; NIP-07, the NIP-46 signer and the profile follow it.
 //
-// Session storage survives event-page/sleep cycles but not a browser restart,
-// so an encrypted identity has to be unlocked once per browser run. The
-// passphrase itself is never stored — unlock re-derives the key from the
-// ncryptsec on disk.
+// Decrypted keys only live in extension session storage (memory), keyed per
+// identity, and are gone after a browser restart. The passphrase is never
+// stored.
 //
-// Environment is injected (local/session storage + clock) so node tests can
-// drive the whole lock/unlock/auto-lock cycle without a browser.
+// Storage (v2):
+//   grunq_signer:identities   { version: 2, active, items: [ { id, label,
+//                               pubkey, created, secret: { privHex } |
+//                               { ncryptsec } } ] }
+//   grunq_signer:unlock       session: { [id]: { privHex, unlockedAt } }
+//   grunq_signer:sessions:<id>  NIP-46 sessions (per identity)
+//   grunq_signer:profile:<id>   public profile (per identity)
+//
+// Legacy single-identity records (grunq_signer:key, :identity, :session,
+// :sessions, :profile) are migrated on first use.
 import {
   derivePubkeyHex,
   encodeNpub,
@@ -22,11 +30,23 @@ import {
   encrypt as nip49Encrypt,
 } from '../lib/nip49.js';
 
-export const KEY_STORE = 'grunq_signer:key'; // { privHex, created } | { ncryptsec, created }
-export const IDENTITY_STORE = 'grunq_signer:identity'; // { pubkey, created }
-export const SESSION_STORE = 'grunq_signer:session'; // memory only: { privHex, unlockedAt }
+export const IDENTITIES_STORE = 'grunq_signer:identities';
+export const UNLOCK_STORE = 'grunq_signer:unlock'; // session storage, memory only
+export const SESSIONS_PREFIX = 'grunq_signer:sessions:';
+export const PROFILE_PREFIX = 'grunq_signer:profile:';
 
 export const MIN_PASSWORD_LENGTH = 8;
+
+const LEGACY = {
+  key: 'grunq_signer:key',
+  identity: 'grunq_signer:identity',
+  session: 'grunq_signer:session',
+  sessions: 'grunq_signer:sessions',
+  profile: 'grunq_signer:profile',
+};
+
+export const sessionsKey = (id) => `${SESSIONS_PREFIX}${id}`;
+export const profileKey = (id) => `${PROFILE_PREFIX}${id}`;
 
 function fail(code, message) {
   const e = new Error(message ?? code);
@@ -37,18 +57,107 @@ function fail(code, message) {
 }
 
 export function createKeystore(env) {
-  const { local, session, now = () => Date.now(), logN = DEFAULT_LOG_N } = env;
+  const {
+    local, // { get, set, remove } persistent storage
+    session, // { get, set, remove } memory-backed extension session storage
+    now = () => Date.now(),
+    logN = DEFAULT_LOG_N,
+    newId = () => globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2),
+    log = () => {},
+  } = env;
 
-  async function keyRecord() {
-    return (await local.get(KEY_STORE)) ?? null;
+  let ready = null;
+
+  async function readDb() {
+    return (await local.get(IDENTITIES_STORE)) ?? { version: 2, active: null, items: [] };
   }
 
-  async function writeIdentity(privHex) {
-    await local.set(IDENTITY_STORE, { pubkey: derivePubkeyHex(privHex), created: now() });
+  async function writeDb(db) {
+    await local.set(IDENTITIES_STORE, db);
+    return db;
   }
 
-  async function openSession(privHex) {
-    await session.set(SESSION_STORE, { privHex, unlockedAt: now() });
+  // One-time migration of the pre-multi-identity storage layout.
+  async function migrate() {
+    const existing = await local.get(IDENTITIES_STORE);
+    if (existing) return existing;
+    const db = { version: 2, active: null, items: [] };
+    const legacy = await local.get(LEGACY.key);
+    if (legacy) {
+      const id = newId();
+      const secret = legacy.privHex
+        ? { privHex: legacy.privHex }
+        : { ncryptsec: legacy.ncryptsec };
+      const privHex = legacy.privHex ?? null;
+      db.items.push({
+        id,
+        label: '',
+        pubkey: privHex ? derivePubkeyHex(privHex) : (await local.get(LEGACY.identity))?.pubkey ?? null,
+        created: legacy.created ?? now(),
+        secret,
+      });
+      db.active = id;
+      const sessions = await local.get(LEGACY.sessions);
+      if (sessions) await local.set(sessionsKey(id), sessions);
+      const profile = await local.get(LEGACY.profile);
+      if (profile) await local.set(profileKey(id), profile);
+      const unlock = await session.get(LEGACY.session);
+      if (unlock?.privHex) {
+        await unlockSet(id, unlock.privHex, unlock.unlockedAt);
+      }
+      await local.remove(LEGACY.sessions);
+      await local.remove(LEGACY.profile);
+      await local.remove(LEGACY.key);
+      await local.remove(LEGACY.identity);
+      await session.remove(LEGACY.session);
+      log('migrated legacy identity', id);
+    }
+    return writeDb(db);
+  }
+
+  function ensureReady() {
+    if (!ready) ready = migrate();
+    return ready;
+  }
+
+  async function db() {
+    await ensureReady();
+    return readDb();
+  }
+
+  function activeItem(database) {
+    return database.items.find((i) => i.id === database.active) ?? null;
+  }
+
+  function publicItem(item, unlocks) {
+    const encrypted = typeof item.secret.ncryptsec === 'string';
+    return {
+      id: item.id,
+      label: item.label || '',
+      pubkey: item.pubkey,
+      npub: item.pubkey ? encodeNpub(item.pubkey) : null,
+      created: item.created,
+      encrypted,
+      unlocked: !encrypted || !!unlocks[item.id]?.privHex,
+    };
+  }
+
+  async function unlockMap() {
+    return (await session.get(UNLOCK_STORE)) ?? {};
+  }
+
+  async function unlockSet(id, privHex, unlockedAt) {
+    const map = await unlockMap();
+    map[id] = { privHex, unlockedAt: unlockedAt ?? now() };
+    await session.set(UNLOCK_STORE, map);
+  }
+
+  async function unlockClear(id) {
+    const map = await unlockMap();
+    if (!map[id]) return false;
+    delete map[id];
+    await session.set(UNLOCK_STORE, map);
+    return true;
   }
 
   function checkPassword(password, repeat) {
@@ -60,162 +169,254 @@ export function createKeystore(env) {
     }
   }
 
-  return {
-    /** { hasKey, encrypted, unlocked, created } — safe to show while locked. */
+  function newItem(secret, pubkey, label) {
+    return {
+      id: newId(),
+      label: typeof label === 'string' ? label.trim().slice(0, 40) : '',
+      pubkey,
+      created: now(),
+      secret,
+    };
+  }
+
+  async function privateKeyOf(item) {
+    if (!item) throw fail('no_key');
+    if (item.secret.privHex) return item.secret.privHex;
+    const unlocks = await unlockMap();
+    if (unlocks[item.id]?.privHex) return unlocks[item.id].privHex;
+    throw fail('locked');
+  }
+
+  const api = {
+    /** { hasKey, count, encrypted, unlocked, created, label } of the active identity. */
     async status() {
-      const rec = await keyRecord();
-      if (!rec) return { hasKey: false, encrypted: false, unlocked: false, created: null };
-      const encrypted = typeof rec.ncryptsec === 'string';
-      if (!encrypted) return { hasKey: true, encrypted: false, unlocked: true, created: rec.created ?? null };
-      const s = await session.get(SESSION_STORE);
-      return { hasKey: true, encrypted: true, unlocked: !!s?.privHex, created: rec.created ?? null };
+      const database = await db();
+      const item = activeItem(database);
+      if (!item) {
+        return { hasKey: false, count: database.items.length, encrypted: false, unlocked: false, created: null, label: '' };
+      }
+      const unlocks = await unlockMap();
+      const encrypted = typeof item.secret.ncryptsec === 'string';
+      return {
+        hasKey: true,
+        count: database.items.length,
+        encrypted,
+        unlocked: !encrypted || !!unlocks[item.id]?.privHex,
+        created: item.created ?? null,
+        label: item.label || '',
+      };
     },
 
-    /** Public key, available even while locked (identity record, not the key). */
+    async activeId() {
+      return (await db()).active;
+    },
+
+    /** All identities (no secrets), for the settings page. */
+    async list() {
+      const database = await db();
+      const unlocks = await unlockMap();
+      return database.items.map((item) => ({
+        ...publicItem(item, unlocks),
+        active: item.id === database.active,
+      }));
+    },
+
+    /** Public key of the active identity, readable while locked. */
     async pubkeyHex() {
-      const rec = await keyRecord();
-      if (!rec) return null;
-      if (rec.privHex) return derivePubkeyHex(rec.privHex);
-      const identity = await local.get(IDENTITY_STORE);
-      if (identity?.pubkey) return identity.pubkey;
-      const s = await session.get(SESSION_STORE);
-      return s?.privHex ? derivePubkeyHex(s.privHex) : null;
+      return activeItem(await db())?.pubkey ?? null;
     },
 
     async npub() {
-      const pub = await this.pubkeyHex();
+      const pub = await api.pubkeyHex();
       return pub ? encodeNpub(pub) : null;
     },
 
-    /** The signing key; throws code "locked" for an encrypted, locked store. */
+    /** Signing key of the active identity; throws "locked" when needed. */
     async privateKeyHex() {
-      const rec = await keyRecord();
-      if (!rec) throw fail('no_key');
-      if (rec.privHex) return rec.privHex;
-      const s = await session.get(SESSION_STORE);
-      if (s?.privHex) return s.privHex;
-      throw fail('locked');
+      return privateKeyOf(activeItem(await db()));
     },
 
-    /** Activity marker for auto-lock; only encrypted stores carry a session. */
+    /** Activity marker for auto-lock (active identity only). */
     async touch() {
-      const rec = await keyRecord();
-      if (!rec || !rec.ncryptsec) return false;
-      const s = await session.get(SESSION_STORE);
-      if (!s?.privHex) return false;
-      await session.set(SESSION_STORE, { ...s, unlockedAt: now() });
+      const item = activeItem(await db());
+      if (!item || !item.secret.ncryptsec) return false;
+      const unlocks = await unlockMap();
+      if (!unlocks[item.id]?.privHex) return false;
+      unlocks[item.id].unlockedAt = now();
+      await session.set(UNLOCK_STORE, unlocks);
       return true;
     },
 
-    async importSecret(input) {
+    /** Import nsec/hex as a new active identity. */
+    async importSecret(input, label) {
       const privHex = parseSecretInput(String(input ?? ''));
-      await local.set(KEY_STORE, { privHex, created: now() });
-      await writeIdentity(privHex);
-      await session.remove(SESSION_STORE);
-      return { pubkey: derivePubkeyHex(privHex) };
+      const database = await db();
+      const item = newItem({ privHex }, derivePubkeyHex(privHex), label);
+      database.items.push(item);
+      database.active = item.id;
+      await writeDb(database);
+      return publicItem(item, await unlockMap());
     },
 
-    async importNcryptsec(input, password) {
+    /** Import an ncryptsec backup (passphrase required) as a new active identity. */
+    async importNcryptsec(input, password, label) {
       const raw = String(input ?? '').trim().toLowerCase();
       if (!/^ncryptsec1[02-9ac-hj-np-z]+$/.test(raw)) throw fail('invalid_input');
       const out = nip49Decrypt(raw, password); // throws wrong_password
-      await local.set(KEY_STORE, { ncryptsec: raw, created: now() });
-      await writeIdentity(out.privHex);
-      await openSession(out.privHex);
-      return { pubkey: derivePubkeyHex(out.privHex) };
+      const database = await db();
+      const item = newItem({ ncryptsec: raw }, derivePubkeyHex(out.privHex), label);
+      database.items.push(item);
+      database.active = item.id;
+      await writeDb(database);
+      await unlockSet(item.id, out.privHex);
+      return publicItem(item, await unlockMap());
     },
 
-    async generate() {
+    /** Create a fresh identity and make it active. */
+    async generate(label) {
       const id = randomIdentity();
-      await local.set(KEY_STORE, { privHex: id.privHex, created: now() });
-      await writeIdentity(id.privHex);
-      await session.remove(SESSION_STORE);
-      return { pubkey: id.pubkeyHex };
+      const database = await db();
+      const item = newItem({ privHex: id.privHex }, id.pubkeyHex, label);
+      database.items.push(item);
+      database.active = item.id;
+      await writeDb(database);
+      return publicItem(item, await unlockMap());
     },
 
-    /** Unlock an encrypted identity; sets the in-memory session key. */
+    /** Switch the active identity (caller restarts the signer). */
+    async switchTo(id) {
+      const database = await db();
+      if (!database.items.some((i) => i.id === id)) throw fail('invalid_input');
+      database.active = id;
+      await writeDb(database);
+      return api.status();
+    },
+
+    async rename(id, label) {
+      const database = await db();
+      const item = database.items.find((i) => i.id === id);
+      if (!item) throw fail('invalid_input');
+      item.label = String(label ?? '').trim().slice(0, 40);
+      await writeDb(database);
+      return publicItem(item, await unlockMap());
+    },
+
+    /** Unlock the active identity with its passphrase. */
     async unlock(password) {
-      const rec = await keyRecord();
-      if (!rec) throw fail('no_key');
-      if (rec.privHex) return { encrypted: false, npub: encodeNpub(derivePubkeyHex(rec.privHex)) };
-      if (!rec.ncryptsec) throw fail('no_key');
+      const item = activeItem(await db());
+      if (!item) throw fail('no_key');
+      if (item.secret.privHex) return { encrypted: false, npub: encodeNpub(item.pubkey) };
       let out;
       try {
-        out = nip49Decrypt(rec.ncryptsec, password);
+        out = nip49Decrypt(item.secret.ncryptsec, password);
       } catch (e) {
         if (e?.code === 'wrong_password') throw fail('wrong_password');
         throw e;
       }
-      await openSession(out.privHex);
-      // Refresh the identity record in case it was lost (e.g. storage repair).
-      await writeIdentity(out.privHex);
-      return { encrypted: true, npub: encodeNpub(derivePubkeyHex(out.privHex)) };
+      if (item.pubkey !== derivePubkeyHex(out.privHex)) throw fail('wrong_password');
+      await unlockSet(item.id, out.privHex);
+      return { encrypted: true, npub: encodeNpub(item.pubkey) };
     },
 
+    /** Drop the in-memory key of the active identity. */
     async lock() {
-      await session.remove(SESSION_STORE);
-      return true;
-    },
-
-    /** Drop the in-memory key after `minutes` without activity. */
-    async autoLockIfIdle(minutes) {
-      const rec = await keyRecord();
-      if (!rec || !rec.ncryptsec) return false;
-      const s = await session.get(SESSION_STORE);
-      if (!s?.privHex) return false;
-      const idleMs = Math.max(1, Number(minutes) || 30) * 60 * 1000;
-      if (now() - (s.unlockedAt ?? 0) < idleMs) return false;
-      await session.remove(SESSION_STORE);
+      const item = activeItem(await db());
+      if (!item) return true;
+      await unlockClear(item.id);
       return true;
     },
 
     /**
-     * Encrypt at rest with a passphrase (first time) or re-key (change).
+     * Auto-lock: drop in-memory keys that idled too long. Returns true when
+     * the active identity was locked (the caller stops the signer).
+     */
+    async autoLockIfIdle(minutes) {
+      const database = await db();
+      const item = activeItem(database);
+      const map = await unlockMap();
+      const idleMs = Math.max(1, Number(minutes) || 30) * 60 * 1000;
+      const cutoff = now() - idleMs;
+      let activeLocked = false;
+      let changed = false;
+      for (const id of Object.keys(map)) {
+        const entry = map[id];
+        if (!entry?.privHex) continue;
+        // Only identities whose stored secret is encrypted may be locked.
+        const owner = database.items.find((i) => i.id === id);
+        if (!owner || !owner.secret.ncryptsec) continue;
+        if ((entry.unlockedAt ?? 0) >= cutoff) continue;
+        delete map[id];
+        changed = true;
+        if (item?.id === id) activeLocked = true;
+      }
+      if (changed) await session.set(UNLOCK_STORE, map);
+      return activeLocked;
+    },
+
+    /**
+     * Encrypt the active identity at rest (first time) or re-key it (change).
      * Returns the ncryptsec string so the popup can show it as a backup.
      */
     async protect(password, repeat) {
       checkPassword(password, repeat);
-      const privHex = await this.privateKeyHex(); // throws locked when encrypted+locked
+      const database = await db();
+      const item = activeItem(database);
+      const privHex = await privateKeyOf(item); // throws locked
       const ncryptsec = nip49Encrypt(privHex, password, {
         logN,
         // The key was stored/imported unencrypted at some point, so NIP-49
         // asks us to mark it as handled insecurely (also on re-keying).
         securityByte: SECURITY_INSECURE,
       });
-      const rec = await keyRecord();
-      await local.set(KEY_STORE, { ncryptsec, created: rec?.created ?? now() });
-      await openSession(privHex);
+      item.secret = { ncryptsec };
+      await writeDb(database);
+      await unlockSet(item.id, privHex);
       return { ncryptsec };
     },
 
-    /** Remove the passphrase protection (keeps the identity). */
+    /** Remove the passphrase protection of the active identity. */
     async unprotect() {
-      const privHex = await this.privateKeyHex();
-      const rec = await keyRecord();
-      await local.set(KEY_STORE, { privHex, created: rec?.created ?? now() });
-      await session.remove(SESSION_STORE);
+      const database = await db();
+      const item = activeItem(database);
+      const privHex = await privateKeyOf(item);
+      item.secret = { privHex };
+      await writeDb(database);
+      await unlockClear(item.id);
       return true;
     },
 
-    /** Nsec export for migration; only when unlocked and explicitly confirmed. */
+    /** Nsec export of the active identity; only when unlocked + confirmed. */
     async exportNsec(confirmed) {
       if (confirmed !== true) throw fail('denied');
-      const privHex = await this.privateKeyHex();
-      return { nsec: encodeNsec(privHex) };
+      return { nsec: encodeNsec(await api.privateKeyHex()) };
     },
 
-    /** The stored ncryptsec (backup), or null for a plaintext store. */
+    /** Stored ncryptsec of the active identity (backup), or null. */
     async exportNcryptsec() {
-      const rec = await keyRecord();
-      if (!rec?.ncryptsec) return null;
-      return { ncryptsec: rec.ncryptsec };
+      const item = activeItem(await db());
+      if (!item?.secret.ncryptsec) return null;
+      return { ncryptsec: item.secret.ncryptsec };
     },
 
-    async remove() {
-      await local.remove(KEY_STORE);
-      await local.remove(IDENTITY_STORE);
-      await session.remove(SESSION_STORE);
-      return true;
+    /** Remove the active identity; falls back to the most recent remaining one. */
+    async remove(id) {
+      return api.removeIdentity(id ?? (await db()).active);
+    },
+
+    async removeIdentity(id) {
+      const database = await db();
+      const idx = database.items.findIndex((i) => i.id === id);
+      if (idx < 0) throw fail('invalid_input');
+      database.items.splice(idx, 1);
+      await unlockClear(id);
+      if (database.active === id) {
+        const next = [...database.items].sort((a, b) => (b.created ?? 0) - (a.created ?? 0))[0];
+        database.active = next?.id ?? null;
+      }
+      await writeDb(database);
+      return api.status();
     },
   };
+
+  return api;
 }

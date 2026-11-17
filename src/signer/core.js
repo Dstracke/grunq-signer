@@ -703,5 +703,16 @@ export function createSignerCore(env) {
       // another ncryptsec) - never reuse a cached signer pubkey.
       signerPubPromise = null;
     },
+
+    /**
+     * Forget everything cached from the previous identity (session list,
+     * signer pubkey). Only valid while stopped; used when the active identity
+     * changes so the next start() reads the new identity's storage scope.
+     */
+    reset() {
+      sessionsCache = null;
+      signerPubPromise = null;
+      started = false;
+    },
   };
 }

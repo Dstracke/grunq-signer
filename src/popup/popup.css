@@ -406,3 +406,15 @@ button.mini {
 #profile-form textarea {
   margin-top: 4px;
 }
+
+/* Identity label chip (multi-identity: "Streamer", "Chat", …) */
+.chip {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--lime);
+  background: var(--lime-soft);
+  border: 1px solid rgba(184, 255, 74, 0.25);
+  border-radius: 999px;
+  padding: 1px 8px;
+  white-space: nowrap;
+}

@@ -402,3 +402,9 @@ table.audit td.ok {
 table.audit td.bad {
   color: var(--danger);
 }
+
+/* A pairing deep link highlights the card so the pending URI is obvious. */
+.card.highlight {
+  border-color: var(--accent);
+  box-shadow: var(--shadow), 0 0 0 1px rgba(61, 139, 255, 0.45), 0 0 26px -10px rgba(61, 139, 255, 0.8);
+}

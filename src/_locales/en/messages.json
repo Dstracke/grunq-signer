@@ -246,6 +246,67 @@
   "optionsHint": {
     "message": "Changes take effect immediately. The popup keeps the quick actions: unlock, QR export and bunker invitations."
   },
+  "pairHeading": {
+    "message": "Pairing"
+  },
+  "pairHint": {
+    "message": "Paste a nostrconnect:// or bunker:// invitation from another program, or open this page as options/options.html?nostrconnect=… — the extension confirms the pairing in its own dialog."
+  },
+  "btnPair": {
+    "message": "Pair"
+  },
+  "pairSourceOptions": {
+    "message": "Settings page (link)"
+  },
+  "pairOk": {
+    "message": "Paired with $NPUB$.",
+    "placeholders": {
+      "npub": {
+        "content": "$1"
+      }
+    }
+  },
+  "identitiesHeading": {
+    "message": "Identities"
+  },
+  "identitiesHint": {
+    "message": "Each identity is its own Nostr key — e.g. one for streaming and one for chatting. Sites, bunker clients and the profile always follow the active identity; sessions and the profile are kept separately per identity."
+  },
+  "identitiesNone": {
+    "message": "No identities yet."
+  },
+  "btnAddIdentity": {
+    "message": "Add identity"
+  },
+  "identityLabel": {
+    "message": "Label (optional, e.g. Streamer or Chat)"
+  },
+  "identitySecret": {
+    "message": "nsec1… or ncryptsec1… (passphrase below for ncryptsec)"
+  },
+  "btnAddIdentitySave": {
+    "message": "Add"
+  },
+  "identityUnnamed": {
+    "message": "Unnamed identity"
+  },
+  "identityActive": {
+    "message": "active"
+  },
+  "btnActivate": {
+    "message": "Activate"
+  },
+  "btnRemoveIdentity": {
+    "message": "Remove"
+  },
+  "confirmRemoveIdentity": {
+    "message": "Remove the identity “$LABEL$” from the extension? Connections and the profile of that identity are gone; the key is lost without a backup.",
+    "placeholders": {
+      "label": {
+        "content": "$1"
+      }
+    }
+  },
   "optionsNoIdentity": {
     "message": "No identity set up yet. Open the extension popup to import or create one."
   },

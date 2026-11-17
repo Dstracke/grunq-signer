@@ -229,16 +229,17 @@ Delegation (NIP-26) in Stufe 1.
 ## 6. Datenmodell (Storage)
 
 ```
-grunq_signer:key           { privHex }  (Stufe 1, Klartext) ODER
-                           { ncryptsec } (NIP-49, siehe §7)
-grunq_signer:session       storage.session (nur RAM): { privHex,
-                           unlockedAt } — entsperrter Klartext während
-                           der Browser-Sitzung, nie auf Platte
-grunq_signer:identity      pubkey, erstellt (öffentlich, auch gesperrt
-                           lesbar)
-grunq_signer:profile       { fields: {name, display_name, about,
+grunq_signer:identities    { version: 2, active, items: [ { id, label,
+                           pubkey, created, secret: { privHex } |
+                           { ncryptsec } } ] }  (mehrere Identitäten)
+grunq_signer:unlock        storage.session (nur RAM): { [id]: { privHex,
+                           unlockedAt } } — entsperrter Klartext je
+                           Identität, nie auf Platte
+grunq_signer:sessions:<id> NIP-46-Sessions je Identität
+grunq_signer:profile:<id>  { fields: {name, display_name, about,
                            picture, nip05, lud16}, eventId, publishedAt,
-                           updatedAt } (öffentliches Kind-0-Profil)
+                           updatedAt } — öffentliches Kind-0-Profil je
+                           Identität
 grunq_signer:permissions   { origin: { nip07: bool, sign_kinds: [..] } }
 grunq_signer:sessions      [ { secret, relays, clientPub, perms,
                              clientName, bound, created, lastActive } ]
@@ -253,12 +254,13 @@ grunq_signer:audit         [ { ts, scope: 'nip46'|'nip07', method,
 
 - **Key at rest (umgesetzt):** Standard bleibt der Klartext-nsec in
   `storage.local` (Stufe 1, wie bei NIP-07-Extensions), aber das Popup
-  bietet **„Mit Passphrase verschlüsseln"**: `grunq_signer:key` hält dann
-  nur noch das NIP-49-`ncryptsec` (`src/lib/nip49.js`, scrypt log_n=16,
-  XChaCha20-Poly1305, Key-Security-Byte 0x00 = „vorher unsicher
-  gespeichert"). Der entschlüsselte Schlüssel lebt ausschließlich in
-  `storage.session` und verschwindet mit dem Browser-Neustart; die
-  Passphrase wird nie gespeichert. Import per `ncryptsec` (Passphrase
+  bietet **„Mit Passphrase verschlüsseln"**: der Eintrag in
+  `grunq_signer:identities` hält dann nur noch das NIP-49-`ncryptsec`
+  (`src/lib/nip49.js`, scrypt log_n=16, XChaCha20-Poly1305,
+  Key-Security-Byte 0x00 = „vorher unsicher gespeichert"). Der
+  entschlüsselte Schlüssel lebt ausschließlich in `storage.session` (je
+  Identität) und verschwindet mit dem Browser-Neustart; die Passphrase
+  wird nie gespeichert. Import per `ncryptsec` (Passphrase
   wird im Import-Feld abgefragt) und Export des ncryptsec als Backup
   (Text + QR) sind vorhanden. Export des nsec nur über den explizit
   bestätigten Dialog (§4.2); er verlangt ein entsperrtes Store.
@@ -408,6 +410,25 @@ laufen unverändert im Knoten, siehe auch GQ-03.)
   Deep-Links abgeschlossen.
 - **M4 (optional):** Multi-Identity (Streamer-/Chat-Identität getrennt),
   NIP-26-Delegation, Web-NWC (`nostr+walletconnect`) als Client-Rolle.
+  **Multi-Identity umgesetzt (17.11.2026):** `grunq_signer:identities` hält
+  beliebig viele Identitäten mit Bezeichnung und NIP-49-Option; genau eine
+  ist aktiv, Websites, NIP-46-Signer und Profil folgen ihr. NIP-46-
+  Sessions und Profil sind je Identität gespeichert, Entsperr-Zustand je
+  Identität im Session-Storage; ein Wechsel stoppt den Signer, verwirft
+  den Core-Cache (`reset()`) und startet mit dem neuen Schlüssel neu
+  (Sitzungen der anderen Identität bleiben erhalten und greifen beim
+  Zurückschalten wieder). Altbestand im Einzel-Identitäts-Format wird beim
+  ersten Zugriff migriert (Schlüssel, Sitzungen, Profil, Entsperrung).
+  UI: Options-Seite „Identitäten" (hinzufügen/erzeugen, aktivieren,
+  entfernen), Popup zeigt die Bezeichnung als Chip. NIP-26-Delegation und
+  Web-NWC bleiben offen.
+- **Options-Seiten-Deep-Link (umgesetzt, 17.11.2026):** Die Options-Seite
+  versteht `options/options.html?nostrconnect=<URI>` (auch im Fragment)
+  und füllt die Kopplungs-Karte vor, hebt sie hervor und scrollt sie in
+  den Blick; `POST` aus dem Popup-Kanal `nostrconnect.pair` startet den
+  bestehenden `connectNostrConnect`-Fluss (Bestätigungsdialog zeigt als
+  Quelle „Einstellungsseite (Link)"). Einfügen von Hand geht im selben
+  Feld.
 
 ## 12. Offene Fragen
 

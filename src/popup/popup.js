@@ -56,6 +56,8 @@ async function refresh() {
   show(el('view-identity'), state.hasKey);
   if (state.hasKey) {
     const identity = state.identity ?? {};
+    el('identity-label').textContent = identity.label ?? '';
+    show(el('identity-label'), !!identity.label);
     el('npub').textContent = identity.npub ?? '';
     const pub = identity.pubkey ?? '';
     el('pubkey-short').textContent = pub ? pub.slice(0, 16) + '…' + pub.slice(-12) : '';

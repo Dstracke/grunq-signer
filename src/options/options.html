@@ -21,6 +21,30 @@
       <p class="hint" data-i18n="optionsNoIdentity"></p>
     </section>
 
+    <section class="card" id="card-identities">
+      <div class="card-head">
+        <h2 data-i18n="identitiesHeading"></h2>
+        <button id="btn-identity-add" class="mini" data-i18n="btnAddIdentity"></button>
+      </div>
+      <p class="hint" data-i18n="identitiesHint"></p>
+      <ul id="identities" class="entries"></ul>
+      <p id="no-identities" class="muted" data-i18n="identitiesNone"></p>
+      <div id="identity-add-form" hidden>
+        <label class="flabel" for="id-label" data-i18n="identityLabel"></label>
+        <input id="id-label" class="field" type="text" autocomplete="off">
+        <label class="flabel" for="id-secret" data-i18n="identitySecret"></label>
+        <textarea id="id-secret" rows="2" spellcheck="false" data-i18n-placeholder="keyPlaceholder"></textarea>
+        <input id="id-passphrase" class="field" type="password" autocomplete="off"
+          data-i18n-placeholder="importPassphrasePlaceholder">
+        <div class="row">
+          <button id="btn-identity-save" class="primary" data-i18n="btnAddIdentitySave"></button>
+          <button id="btn-identity-generate" data-i18n="btnGenerate"></button>
+          <button id="btn-identity-cancel" data-i18n="btnCancel"></button>
+        </div>
+        <p id="identity-error" class="error" hidden></p>
+      </div>
+    </section>
+
     <section class="card" id="card-profile">
       <div class="card-head">
         <h2 data-i18n="profileHeading"></h2>
@@ -60,6 +84,17 @@
       </div>
       <p id="relays-status" class="hint" hidden></p>
       <p id="relays-error" class="error" hidden></p>
+    </section>
+
+    <section class="card" id="card-pair">
+      <h2 data-i18n="pairHeading"></h2>
+      <p class="hint" data-i18n="pairHint"></p>
+      <textarea id="pair-uri" class="mono" rows="2" spellcheck="false" placeholder="nostrconnect://…"></textarea>
+      <div class="row">
+        <button id="btn-pair" class="primary" data-i18n="btnPair"></button>
+      </div>
+      <p id="pair-status" class="hint" hidden></p>
+      <p id="pair-error" class="error" hidden></p>
     </section>
 
     <section class="card" id="card-approvals">

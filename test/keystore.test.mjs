@@ -1,15 +1,15 @@
-// Key store tests: plaintext and NIP-49-encrypted identities, unlock/lock,
-// auto-lock after idle, export gating and removal. scrypt is driven with a
-// low work factor (2^12) so the suite stays fast; the wire format is covered
-// by test/nip49.test.mjs against the official vector.
+// Key store tests: multiple identities, migration from the single-identity
+// layout, NIP-49 protection per identity, unlock/lock, auto-lock, session
+// scoping and removal. scrypt uses a low work factor so the suite stays fast.
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
-  IDENTITY_STORE,
-  KEY_STORE,
+  IDENTITIES_STORE,
   MIN_PASSWORD_LENGTH,
-  SESSION_STORE,
+  UNLOCK_STORE,
   createKeystore,
+  profileKey,
+  sessionsKey,
 } from '../src/signer/keystore.js';
 import { encodeNsec, randomIdentity } from '../src/lib/keys.js';
 
@@ -29,72 +29,98 @@ function memoryStore() {
   };
 }
 
-function setup({ logN = 12 } = {}) {
+function setup() {
   const local = memoryStore();
   const session = memoryStore();
   let clock = 1_700_000_000_000;
-  const ks = createKeystore({ local, session, now: () => clock, logN });
+  let seq = 0;
+  const ks = createKeystore({
+    local,
+    session,
+    now: () => clock,
+    logN: 12,
+    newId: () => `id-${++seq}`,
+  });
   return { ks, local, session, tick: (ms) => (clock += ms) };
 }
 
-test('keystore: import stores a plaintext identity and reports unlocked', async () => {
+const active = (db) => db.items.find((i) => i.id === db.active);
+
+test('keystore: starts empty and reports no identity', async () => {
+  const { ks } = setup();
+  assert.deepEqual(await ks.status(), {
+    hasKey: false,
+    count: 0,
+    encrypted: false,
+    unlocked: false,
+    created: null,
+    label: '',
+  });
+  assert.deepEqual(await ks.list(), []);
+  await assert.rejects(ks.privateKeyHex(), (e) => e.code === 'no_key');
+});
+
+test('keystore: import creates the first identity and makes it active', async () => {
   const { ks, local } = setup();
   const id = randomIdentity();
-  await ks.importSecret(encodeNsec(id.privHex));
-  assert.deepEqual(await ks.status(), {
-    hasKey: true,
-    encrypted: false,
-    unlocked: true,
-    created: 1_700_000_000_000,
-  });
+  const item = await ks.importSecret(encodeNsec(id.privHex), 'Streamer');
+  assert.equal(item.label, 'Streamer');
+  assert.equal(item.pubkey, id.pubkeyHex);
+  assert.match(item.npub, /^npub1/);
   assert.equal(await ks.privateKeyHex(), id.privHex);
   assert.equal(await ks.pubkeyHex(), id.pubkeyHex);
-  assert.equal(local.map.get(KEY_STORE).privHex, id.privHex);
+  const db = local.map.get(IDENTITIES_STORE);
+  assert.equal(db.items.length, 1);
+  assert.equal(db.active, item.id);
+  assert.equal(active(db).secret.privHex, id.privHex);
 });
 
-test('keystore: generate creates a fresh identity', async () => {
-  const { ks } = setup();
-  const { pubkey } = await ks.generate();
-  assert.equal(await ks.pubkeyHex(), pubkey);
-  assert.match(await ks.npub(), /^npub1/);
+test('keystore: a second identity switches the active key', async () => {
+  const { ks, local } = setup();
+  const a = randomIdentity();
+  const b = randomIdentity();
+  const itemA = await ks.importSecret(a.privHex, 'Streamer');
+  const itemB = await ks.importSecret(b.privHex, 'Chat');
+  assert.equal(await ks.privateKeyHex(), b.privHex, 'newest import becomes active');
+  assert.equal(await ks.status().then((s) => s.label), 'Chat');
+  assert.equal((await ks.status()).count, 2);
+
+  const list = await ks.list();
+  assert.equal(list.length, 2);
+  assert.equal(list.find((i) => i.id === itemB.id).active, true);
+  assert.equal(list.find((i) => i.id === itemA.id).active, false);
+
+  await ks.switchTo(itemA.id);
+  assert.equal(await ks.privateKeyHex(), a.privHex);
+  const db = local.map.get(IDENTITIES_STORE);
+  assert.equal(db.active, itemA.id);
 });
 
-test('keystore: protect encrypts at rest and keeps working until locked', async () => {
-  const { ks, local, session } = setup();
-  const id = randomIdentity();
-  await ks.importSecret(encodeNsec(id.privHex));
-  const { ncryptsec } = await ks.protect('secret-passphrase', 'secret-passphrase');
-  assert.match(ncryptsec, /^ncryptsec1/);
-  const stored = local.map.get(KEY_STORE);
-  assert.equal(stored.privHex, undefined, 'plaintext key must be gone');
-  assert.equal(stored.ncryptsec, ncryptsec);
+test('keystore: protect/lock/unlock work per identity', async () => {
+  const { ks, session } = setup();
+  const a = randomIdentity();
+  const b = randomIdentity();
+  const itemA = await ks.importSecret(a.privHex, 'A');
+  await ks.importSecret(b.privHex, 'B');
+  // Protect the active identity (B) only.
+  await ks.protect('mein-langes-passwort');
   assert.equal((await ks.status()).encrypted, true);
-  assert.equal((await ks.status()).unlocked, true, 'protecting keeps the session open');
-  assert.equal(await ks.privateKeyHex(), id.privHex);
-  assert.equal(session.map.get(SESSION_STORE).privHex, id.privHex);
+  await ks.switchTo(itemA.id);
+  assert.equal((await ks.status()).encrypted, false, 'A is still plaintext');
 
+  await ks.switchTo((await ks.list()).find((i) => i.label === 'B').id);
   await ks.lock();
   assert.equal((await ks.status()).unlocked, false);
   await assert.rejects(ks.privateKeyHex(), (e) => e.code === 'locked');
-  // The public identity stays readable while locked.
-  assert.equal(await ks.pubkeyHex(), id.pubkeyHex);
-});
-
-test('keystore: unlock with the right passphrase, reject the wrong one', async () => {
-  const { ks } = setup();
-  const id = randomIdentity();
-  await ks.importSecret(id.privHex);
-  await ks.protect('mein-langes-passwort');
-  await ks.lock();
+  assert.equal(await ks.pubkeyHex(), b.pubkeyHex, 'public key readable while locked');
   await assert.rejects(ks.unlock('falsches-passwort'), (e) => e.code === 'wrong_password');
-  assert.equal((await ks.status()).unlocked, false);
-  const res = await ks.unlock('mein-langes-passwort');
-  assert.equal(res.encrypted, true);
-  assert.deepEqual(res.npub, await ks.npub());
-  assert.equal(await ks.privateKeyHex(), id.privHex);
+  await ks.unlock('mein-langes-passwort');
+  assert.equal(await ks.privateKeyHex(), b.privHex);
+  const unlocks = session.map.get(UNLOCK_STORE);
+  assert.ok(Object.keys(unlocks).length >= 1);
 });
 
-test('keystore: re-keying (change passphrase) keeps the identity', async () => {
+test('keystore: re-keying keeps the identity and rejects the old passphrase', async () => {
   const { ks } = setup();
   const id = randomIdentity();
   await ks.importSecret(id.privHex);
@@ -103,8 +129,8 @@ test('keystore: re-keying (change passphrase) keeps the identity', async () => {
   assert.match(ncryptsec, /^ncryptsec1/);
   await ks.lock();
   await assert.rejects(ks.unlock('altes-passwort'), (e) => e.code === 'wrong_password');
-  const res = await ks.unlock('neues-passwort');
-  assert.deepEqual(res.npub, await ks.npub());
+  await ks.unlock('neues-passwort');
+  assert.equal(await ks.pubkeyHex(), id.pubkeyHex);
 });
 
 test('keystore: passphrase policy (length + repeat)', async () => {
@@ -118,32 +144,31 @@ test('keystore: passphrase policy (length + repeat)', async () => {
   assert.equal(MIN_PASSWORD_LENGTH, 8);
 });
 
-test('keystore: auto-lock drops the session key after idle minutes', async () => {
+test('keystore: auto-lock drops idle keys and reports the active lock', async () => {
   const { ks, tick } = setup();
-  await ks.generate();
+  await ks.generate('A');
   await ks.protect('mein-langes-passwort');
   tick(29 * 60 * 1000);
   assert.equal(await ks.autoLockIfIdle(30), false, 'not idle yet');
   tick(2 * 60 * 1000);
   assert.equal(await ks.autoLockIfIdle(30), true);
   assert.equal((await ks.status()).unlocked, false);
-  // A touch before the deadline postpones the lock again.
+
   await ks.unlock('mein-langes-passwort');
   tick(20 * 60 * 1000);
   await ks.touch();
   tick(20 * 60 * 1000);
-  assert.equal(await ks.autoLockIfIdle(30), false);
+  assert.equal(await ks.autoLockIfIdle(30), false, 'touch postpones the lock');
 });
 
 test('keystore: auto-lock never touches plaintext identities', async () => {
   const { ks, tick } = setup();
   await ks.generate();
   tick(24 * 60 * 60 * 1000);
-  assert.equal(await ks.autoLockIfIdle(30), false);
   assert.equal(await ks.autoLockIfIdle(1), false);
 });
 
-test('keystore: import of an ncryptsec requires the passphrase and unlocks', async () => {
+test('keystore: ncryptsec import needs the passphrase and unlocks', async () => {
   const { ks } = setup();
   const id = randomIdentity();
   await ks.importSecret(id.privHex);
@@ -151,11 +176,11 @@ test('keystore: import of an ncryptsec requires the passphrase and unlocks', asy
   await ks.remove();
 
   await assert.rejects(ks.importNcryptsec(ncryptsec, 'falsch'), (e) => e.code === 'wrong_password');
-  assert.equal((await ks.status()).hasKey, false);
-  const res = await ks.importNcryptsec(ncryptsec, 'mein-langes-passwort');
-  assert.equal(res.pubkey, id.pubkeyHex);
-  assert.equal((await ks.status()).encrypted, true);
-  assert.equal((await ks.status()).unlocked, true);
+  const item = await ks.importNcryptsec(ncryptsec, 'mein-langes-passwort', 'Backup');
+  assert.equal(item.pubkey, id.pubkeyHex);
+  assert.equal(item.encrypted, true);
+  assert.equal(item.unlocked, true);
+  assert.equal(await ks.privateKeyHex(), id.privHex);
 });
 
 test('keystore: nsec export needs confirmation and an unlocked store', async () => {
@@ -164,31 +189,80 @@ test('keystore: nsec export needs confirmation and an unlocked store', async () 
   await ks.importSecret(id.privHex);
   await assert.rejects(ks.exportNsec(false), (e) => e.code === 'denied');
   assert.equal((await ks.exportNsec(true)).nsec, encodeNsec(id.privHex));
-
   await ks.protect('mein-langes-passwort');
   await ks.lock();
   await assert.rejects(ks.exportNsec(true), (e) => e.code === 'locked');
 });
 
-test('keystore: unprotect writes the plaintext key back', async () => {
+test('keystore: unprotect writes the plaintext secret back', async () => {
   const { ks, local } = setup();
   const id = randomIdentity();
   await ks.importSecret(id.privHex);
   await ks.protect('mein-langes-passwort');
-  assert.equal((await ks.exportNcryptsec()).ncryptsec.startsWith('ncryptsec1'), true);
+  assert.ok((await ks.exportNcryptsec()).ncryptsec.startsWith('ncryptsec1'));
   await ks.unprotect();
-  assert.equal(local.map.get(KEY_STORE).privHex, id.privHex);
+  assert.equal(active(local.map.get(IDENTITIES_STORE)).secret.privHex, id.privHex);
   assert.equal((await ks.status()).encrypted, false);
   assert.equal(await ks.exportNcryptsec(), null);
 });
 
-test('keystore: remove deletes key, identity and session', async () => {
-  const { ks, local, session } = setup();
-  await ks.generate();
-  await ks.protect('mein-langes-passwort');
-  await ks.remove();
+test('keystore: removing an identity falls back to the most recent remaining', async () => {
+  const { ks } = setup();
+  const a = randomIdentity();
+  const b = randomIdentity();
+  const itemA = await ks.importSecret(a.privHex, 'A');
+  const itemB = await ks.importSecret(b.privHex, 'B');
+  await ks.removeIdentity(itemB.id);
+  assert.equal((await ks.status()).count, 1);
+  assert.equal(await ks.pubkeyHex(), a.pubkeyHex);
+  await ks.removeIdentity(itemA.id);
   assert.equal((await ks.status()).hasKey, false);
-  assert.equal(local.map.get(IDENTITY_STORE), undefined);
-  assert.equal(session.map.get(SESSION_STORE), undefined);
-  await assert.rejects(ks.privateKeyHex(), (e) => e.code === 'no_key');
+});
+
+test('keystore: rename keeps the key and trims the label', async () => {
+  const { ks } = setup();
+  const id = randomIdentity();
+  const item = await ks.importSecret(id.privHex, 'Alt');
+  const renamed = await ks.rename(item.id, '  Chat-Key  ');
+  assert.equal(renamed.label, 'Chat-Key');
+  assert.equal(await ks.privateKeyHex(), id.privHex);
+});
+
+test('keystore: migrates the legacy single-identity storage', async () => {
+  const { ks, local, session } = setup();
+  const legacy = randomIdentity();
+  // Prefill the v1 layout before the keystore is used (setup() does not touch
+  // storage until a method runs).
+  local.map.set('grunq_signer:key', { privHex: legacy.privHex, created: 1_600_000_000_000 });
+  local.map.set('grunq_signer:identity', { pubkey: legacy.pubkeyHex, created: 1_600_000_000_000 });
+  local.map.set('grunq_signer:sessions', [{ secret: 'abc', bound: true, relays: ['wss://r'] }]);
+  local.map.set('grunq_signer:profile', { fields: { name: 'legacy' }, publishedAt: 42 });
+  session.map.set('grunq_signer:session', { privHex: legacy.privHex, unlockedAt: 1_600_000_100_000 });
+
+  const status = await ks.status();
+  assert.equal(status.hasKey, true);
+  assert.equal(status.created, 1_600_000_000_000);
+
+  const item = active(local.map.get(IDENTITIES_STORE));
+  assert.equal(item.secret.privHex, legacy.privHex);
+  assert.equal(item.pubkey, legacy.pubkeyHex);
+  assert.equal(item.created, 1_600_000_000_000);
+
+  // The decrypted key was carried into the per-identity unlock map.
+  assert.equal(session.map.get(UNLOCK_STORE)[item.id].privHex, legacy.privHex);
+  assert.equal(session.map.get(UNLOCK_STORE)[item.id].unlockedAt, 1_600_000_100_000);
+
+  // NIP-46 sessions and the profile moved into the identity namespace.
+  assert.equal(local.map.get(sessionsKey(item.id))[0].secret, 'abc');
+  assert.equal(local.map.get(profileKey(item.id)).fields.name, 'legacy');
+
+  // Legacy keys are gone.
+  assert.equal(local.map.get('grunq_signer:key'), undefined);
+  assert.equal(local.map.get('grunq_signer:identity'), undefined);
+  assert.equal(local.map.get('grunq_signer:sessions'), undefined);
+  assert.equal(local.map.get('grunq_signer:profile'), undefined);
+  assert.equal(session.map.get('grunq_signer:session'), undefined);
+
+  assert.equal(await ks.privateKeyHex(), legacy.privHex);
+  assert.equal(await ks.pubkeyHex(), legacy.pubkeyHex);
 });

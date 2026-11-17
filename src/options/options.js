@@ -64,8 +64,120 @@ async function refresh() {
   renderApprovals();
   renderSessions();
   renderRelays();
-  await Promise.all([refreshProfile(), refreshAudit()]);
+  await Promise.all([refreshIdentities(), refreshProfile(), refreshAudit()]);
 }
+
+// ---------- identities ----------
+
+let identities = [];
+
+async function refreshIdentities() {
+  try {
+    identities = await send({ action: 'identity.list' });
+  } catch {
+    identities = [];
+  }
+  renderIdentities();
+}
+
+function renderIdentities() {
+  const list = el('identities');
+  list.textContent = '';
+  for (const item of identities) {
+    const li = document.createElement('li');
+    const who = document.createElement('span');
+    who.className = 'who';
+    who.textContent = item.label || t('identityUnnamed');
+    if (item.active) {
+      const chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.textContent = t('identityActive');
+      who.append(' ', chip);
+    }
+    const sub = document.createElement('span');
+    sub.className = 'sub mono';
+    const parts = [];
+    if (item.npub) parts.push(item.npub.slice(0, 20) + '…');
+    if (item.encrypted) parts.push(item.unlocked ? t('secBadgeEncrypted') : t('secBadgeLocked'));
+    sub.textContent = parts.join(' · ');
+    li.append(who, sub);
+
+    if (!item.active) {
+      const use = document.createElement('button');
+      use.textContent = t('btnActivate');
+      use.addEventListener('click', async () => {
+        try {
+          await send({ action: 'identity.switch', id: item.id });
+          await refresh();
+        } catch (e) {
+          showError(el('global-error'), e);
+        }
+      });
+      li.append(use);
+    }
+
+    const remove = document.createElement('button');
+    remove.className = 'danger';
+    remove.textContent = t('btnRemoveIdentity');
+    remove.addEventListener('click', async () => {
+      if (!confirm(t('confirmRemoveIdentity', [item.label || t('identityUnnamed')]))) return;
+      try {
+        await send({ action: 'identity.remove', id: item.id });
+        await refresh();
+      } catch (e) {
+        showError(el('global-error'), e);
+      }
+    });
+    li.append(remove);
+    list.append(li);
+  }
+  show(el('no-identities'), identities.length === 0);
+}
+
+el('btn-identity-add').addEventListener('click', () => {
+  const form = el('identity-add-form');
+  show(form, form.hidden);
+  if (!form.hidden) {
+    show(el('identity-error'), false);
+    el('id-label').focus();
+  }
+});
+
+el('btn-identity-cancel').addEventListener('click', () => {
+  show(el('identity-add-form'), false);
+  show(el('identity-error'), false);
+});
+
+el('btn-identity-save').addEventListener('click', async () => {
+  show(el('identity-error'), false);
+  try {
+    await send({
+      action: 'import',
+      input: el('id-secret').value,
+      passphrase: el('id-passphrase').value,
+      label: el('id-label').value,
+    });
+    el('id-secret').value = '';
+    el('id-passphrase').value = '';
+    el('id-label').value = '';
+    show(el('identity-add-form'), false);
+    await refresh();
+  } catch (e) {
+    showError(el('identity-error'), e);
+  }
+});
+
+el('btn-identity-generate').addEventListener('click', async () => {
+  show(el('identity-error'), false);
+  try {
+    await send({ action: 'generate', label: el('id-label').value });
+    el('id-label').value = '';
+    show(el('identity-add-form'), false);
+    await refresh();
+  } catch (e) {
+    showError(el('identity-error'), e);
+  }
+});
 
 // ---------- profile ----------
 
@@ -177,6 +289,39 @@ el('btn-relays-save').addEventListener('click', async () => {
     showError(el('relays-error'), e);
   }
 });
+
+// ---------- pairing (paste or ?nostrconnect= deep link) ----------
+
+function deepLinkUri() {
+  const fromSearch = new URLSearchParams(location.search).get('nostrconnect');
+  if (fromSearch) return fromSearch;
+  const hash = location.hash.replace(/^#/, '');
+  if (!hash) return '';
+  const params = new URLSearchParams(hash);
+  return params.get('nostrconnect') ?? (hash.startsWith('nostrconnect:') ? hash : '');
+}
+
+el('btn-pair').addEventListener('click', async () => {
+  show(el('pair-error'), false);
+  show(el('pair-status'), false);
+  const uri = el('pair-uri').value.trim();
+  try {
+    const res = await send({ action: 'nostrconnect.pair', uri });
+    await refresh();
+    flash(el('pair-status'), t('pairOk', [res?.npub ?? '']));
+  } catch (e) {
+    showError(el('pair-error'), e);
+  }
+});
+
+function prefillPairing() {
+  const uri = deepLinkUri();
+  if (!uri) return;
+  el('pair-uri').value = uri;
+  el('card-pair').classList.add('highlight');
+  el('card-pair').scrollIntoView({ block: 'center' });
+  el('btn-pair').focus();
+}
 
 // ---------- site approvals ----------
 
@@ -379,3 +524,4 @@ el('btn-audit-clear').addEventListener('click', async () => {
 
 initI18n();
 refresh().catch((e) => showError(el('global-error'), e));
+prefillPairing();

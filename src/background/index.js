@@ -13,10 +13,11 @@ import { RelayPool } from '../lib/relay-pool.js';
 import {
   createSignerCore,
   defaultSettings,
+  SESSIONS_STORE,
   SETTINGS_STORE,
 } from '../signer/core.js';
-import { createKeystore } from '../signer/keystore.js';
-import { createProfileService, planRepublish } from '../signer/profile.js';
+import { createKeystore, profileKey, sessionsKey } from '../signer/keystore.js';
+import { createProfileService, PROFILE_STORE, planRepublish } from '../signer/profile.js';
 import { createAuditLog } from '../signer/audit.js';
 
 const api = globalThis.browser ?? globalThis.chrome;
@@ -82,7 +83,23 @@ const sessionStore = api.storage?.session
 const keystore = createKeystore({
   local: { get: getStore, set: setStore, remove: removeStore },
   session: sessionStore,
+  log: (...args) => console.log('[keystore]', ...args),
 });
+
+// NIP-46 sessions and the public profile are per identity; relays, settings
+// and site approvals stay global. The scoping resolves the active identity on
+// every access, so switching identities needs no cache invalidation here (the
+// signer core is stopped/reset around a switch).
+async function scopedKey(key) {
+  if (key === SESSIONS_STORE) return sessionsKey(await keystore.activeId());
+  if (key === PROFILE_STORE) return profileKey(await keystore.activeId());
+  return key;
+}
+
+const scopedStorage = {
+  get: async (key) => getStore(await scopedKey(key)),
+  set: async (key, value) => setStore(await scopedKey(key), value),
+};
 
 async function hasIdentity() {
   return (await keystore.status()).hasKey;
@@ -128,7 +145,7 @@ const PROFILE_CHECK_MIN_MS = 60 * 60 * 1000;
 let profileCheckScheduled = false;
 
 const profileService = createProfileService({
-  storage: { get: getStore, set: setStore },
+  storage: scopedStorage,
   transport: profileTransport,
   log: (...args) => console.log('[profile]', ...args),
 });
@@ -252,10 +269,7 @@ async function rememberSignKind(origin, kind) {
 // ---------- NIP-46 signer (bunker) ----------
 
 const signerCore = createSignerCore({
-  storage: {
-    get: (key) => getStore(key),
-    set: (key, value) => setStore(key, value),
-  },
+  storage: scopedStorage,
   transport: new RelayPool(),
   requestApproval,
   signerPrivHex: () => keystore.privateKeyHex(),
@@ -526,8 +540,9 @@ async function handlePopup(msg) {
         hasKey: status.hasKey,
         encrypted: status.encrypted,
         unlocked: status.unlocked,
+        identityCount: status.count,
         identity: pubkey
-          ? { pubkey, npub: encodeNpub(pubkey), created: status.created }
+          ? { pubkey, npub: encodeNpub(pubkey), created: status.created, label: status.label }
           : null,
         approvals: Object.entries(perms)
           .filter(([, v]) => v?.nip07)
@@ -539,25 +554,52 @@ async function handlePopup(msg) {
     }
 
     // Plain nsec/hex key, or an ncryptsec backup that needs its passphrase.
+    // Imports/creates a NEW identity and makes it active.
     case 'import': {
       const input = String(msg.input ?? '').trim();
       // Restart the signer so subscriptions follow the new identity.
       await stopSigner();
-      if (/^ncryptsec1/i.test(input)) {
-        const res = await keystore.importNcryptsec(input, String(msg.passphrase ?? ''));
-        await bootSigner();
-        return res;
-      }
-      const res = await keystore.importSecret(input);
+      signerCore.reset();
+      const label = typeof msg.label === 'string' ? msg.label : '';
+      const res = /^ncryptsec1/i.test(input)
+        ? await keystore.importNcryptsec(input, String(msg.passphrase ?? ''), label)
+        : await keystore.importSecret(input, label);
       await bootSigner();
       return res;
     }
 
     case 'generate': {
       await stopSigner();
-      const res = await keystore.generate();
+      signerCore.reset();
+      const res = await keystore.generate(typeof msg.label === 'string' ? msg.label : '');
       await bootSigner();
       return res;
+    }
+
+    // ---------- multiple identities ----------
+
+    case 'identity.list': {
+      return await keystore.list();
+    }
+
+    case 'identity.switch': {
+      await stopSigner();
+      signerCore.reset();
+      const status = await keystore.switchTo(String(msg.id ?? ''));
+      await bootSigner();
+      return status;
+    }
+
+    case 'identity.rename': {
+      return await keystore.rename(String(msg.id ?? ''), String(msg.label ?? ''));
+    }
+
+    case 'identity.remove': {
+      await stopSigner();
+      signerCore.reset();
+      const status = await keystore.removeIdentity(String(msg.id ?? ''));
+      await bootSigner();
+      return status;
     }
 
     // Identity export for migration to a phone/program: the popup asks for
@@ -611,6 +653,24 @@ async function handlePopup(msg) {
     }
 
     // ---------- settings page (options) ----------
+
+    // Options-page pairing: same flow as the page bridge, but the URI is
+    // pasted or arrives as ?nostrconnect= deep link instead of postMessage.
+    case 'nostrconnect.pair': {
+      const status = await keystore.status();
+      if (!status.hasKey) throw err('no_key');
+      if (status.encrypted && !status.unlocked) throw err('locked');
+      if (typeof msg.uri !== 'string' || !msg.uri.trim().startsWith('nostrconnect:')) {
+        throw err('invalid_input');
+      }
+      try {
+        return await signerCore.connectNostrConnect(msg.uri.trim(), {
+          origin: t('pairSourceOptions'),
+        });
+      } catch (e) {
+        popupError(e);
+      }
+    }
 
     case 'audit.list': {
       return await auditLog.list({
@@ -691,9 +751,11 @@ async function handlePopup(msg) {
     }
 
     case 'remove': {
-      await keystore.remove();
       await stopSigner();
-      return { ok: true };
+      signerCore.reset();
+      const status = await keystore.remove();
+      await bootSigner();
+      return status;
     }
 
     case 'revoke': {
