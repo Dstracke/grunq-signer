@@ -15,7 +15,7 @@ default/fallback, German bundled).
 | License | AGPL-3.0 |
 | Homepage | https://grunq.com/grunq-signer/ |
 | Privacy policy | https://grunq.com/grunq-signer/privacy.html (EN) · /datenschutz.html (DE) |
-| Support / contact | contact@grunq.com |
+| Support / contact | `contact@grunq.com` · support site: https://grunq.com/grunq-signer/#support (or the issue tracker: https://github.com/Dstracke/grunq-signer/issues) |
 | Source code | https://github.com/Dstracke/grunq-signer |
 | Permissions | `storage` (identities, approvals, sessions, settings), `alarms` (keepalive + auto-lock tick) |
 | Host permissions | none — network access happens through `WebSocket` to user-configured relays |
