@@ -11,7 +11,7 @@ default/fallback, German bundled).
 | Name | Grunq Signer |
 | Version | 1.0.0 (`package.json` / `dist/manifest.json`) |
 | Summary (≤ 132 chars) | Nostr identity in your browser: NIP-07 provider and NIP-46 signer. Keys stay local, encrypted at rest, no account. |
-| Category | Firefox: *Other* (or *Security & Privacy*) · Chrome: *Productivity* → *Developer Tools* is wrong; use *Productivity* |
+| Category | Firefox: **Privacy & Security** (German UI: *Datenschutz & Sicherheit*), exactly one; there is no "Other" in the current list · Chrome: *Productivity* → *Developer Tools* is wrong; use *Productivity* |
 | License | AGPL-3.0 |
 | Homepage | https://grunq.com/grunq-signer/ |
 | Privacy policy | https://grunq.com/grunq-signer/privacy.html (EN) · /datenschutz.html (DE) |

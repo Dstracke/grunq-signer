@@ -59,7 +59,10 @@ Chrome zeigt max. 5 Bilder: 01–04 + 06 verwenden, Audit nur bei AMO.
    ```
 5. **Description (EN)** – siehe `docs/store-listing.md`, Abschnitt
    "Detailed description".
-6. **Kategorie:** Other (alternativ Security & Privacy)
+6. **Kategorie:** **Datenschutz & Sicherheit** (AMO, EN: *Privacy &
+   Security*) – genau eine. Es gibt in der aktuellen Liste kein „Other";
+   „Webentwicklung" wäre die DevTools-Kategorie und für Endnutzer falsch.
+   „Mein Add-on passt in keine der Kategorien" **nicht** ankreuzen.
 7. **Support-E-Mail:** contact@grunq.com
 8. **Privacy policy:** https://grunq.com/grunq-signer/privacy.html
 9. **License:** AGPL-3.0 (im Formular „GNU Affero General Public License v3.0")
