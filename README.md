@@ -89,6 +89,8 @@ it to the GitHub release (`.github/workflows/release.yml`).
 
 **Platforms:** Firefox and Chromium on the desktop (tested on Zen/Firefox);
 Firefox for Android is untested and not advertised in the store listing.
+Minimum versions: Firefox Desktop **140**, Firefox for Android **142**
+(`gecko_android.strict_min_version`), Chromium 111.
 
 ### Testing the NIP-07 surface
 

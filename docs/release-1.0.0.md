@@ -143,9 +143,14 @@ language.
 - **Verschlüsselte Identität + Browser-Neustart:** Der Signer startet
   gesperrt und wartet auf das Entsperren im Popup. Das ist beabsichtigt
   (Schlüssel nur im RAM) und im README dokumentiert.
-- **`web-ext lint`-Warnungen:** `background.service_worker` (Chromium-Pfad,
-  von Firefox ignoriert) und `data_collection_permissions` (Android-Minimum);
-  beides erwartbar, keine Fehler.
+- **`web-ext lint`-Warnung:** nur noch `background.service_worker`
+  (Chromium-Pfad, von Firefox bewusst ignoriert – Firefox nutzt
+  `background.scripts`; ein Manifest für beide Stores). Erwartbar, kein Fehler.
+- **Mindestversionen:** Firefox Desktop **140** (nötig für
+  `data_collection_permissions`, sonst warnt AMO) und Firefox Android
+  **142** (`gecko_android.strict_min_version`), damit auch dort die
+  Datenerklärungs-Angabe greift. Ältere Versionen 128–139 werden nicht
+  mehr unterstützt.
 - **NIP-46-Live-Test** mit dem Grunq-Knoten vor dem Einreichen einmal
   durchklicken – Checkliste in `docs/store-listing.md`.
 - **NIP-05-Claim** ist rein optional und braucht den Betreiber: Anfrage aus

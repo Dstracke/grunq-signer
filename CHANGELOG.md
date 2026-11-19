@@ -4,6 +4,16 @@ All notable changes to Grunq Signer. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the project uses
 semantic versioning.
 
+## [Unreleased]
+
+### Changed
+
+- **Mindestversionen im Manifest:** Firefox Desktop 140 (statt 128), Firefox
+  für Android 142. Ab Firefox 140 ist `data_collection_permissions` bekannt;
+  mit `strict_min_version = 128` hat AMO die Datenerklärung als
+  „nicht unterstützt" markiert. `gecko_android.strict_min_version` = 142
+  beseitigt dieselbe Warnung für Android.
+
 ## [1.0.0] – 2026-11-17
 
 First public release. A browser extension that is both a NIP-07 provider
