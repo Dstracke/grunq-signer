@@ -4,6 +4,17 @@ Alles, was für die Einreichung bei **addons.mozilla.org (AMO)** und im
 **Chrome Web Store** gebraucht wird – inklusive Kopiervorlagen. Der Stand
 ist reproduzierbar: Build, Tests und Lint sind im CI grün.
 
+## Status
+
+- **Firefox / AMO:** eingereicht am **19.11.2026** aus `a5a0e70`
+  (Build mit `strict_min_version` 140.0, Android 142,
+  `data_collection_permissions`), wartet auf die Prüfung durch Mozilla.
+- **Chrome Web Store:** noch nicht eingereicht – Einreichung steht aus.
+- **GitHub-Release `v1.0.0`:** existiert (Tag auf `510f15f`, Artefakt mit
+  Mindestversion 128.0). Das eingereichte AMO-Build ist damit **nicht**
+  byte-identisch; für die Store-Version zählt der eingereichte Stand
+  (`a5a0e70`).
+
 ## Artefakt
 
 ```bash
@@ -139,10 +150,14 @@ language.
 
 ## Nach der Veröffentlichung
 
+- [x] Einreichung bei addons.mozilla.org (19.11.2026, wartet auf Review).
+- [ ] Chrome Web Store einreichen (gleiches ZIP, `manifest.json` deckt beide
+      Pfade ab).
 - [ ] Store-URLs in `docs/store-listing.md` und auf der Landing-Page
-      (`deploy/landing/grunq-signer/index.html`, Buttons „Listing in
-      preparation" → Store-Links) eintragen.
-- [ ] Git-Tag `v1.0.0` (lokal gesetzt) und GitHub-Release mit dem ZIP.
+      (`deploy/landing/grunq-signer/index.html`, Hinweis „In review at
+      addons.mozilla.org" → Store-Link) eintragen.
+- [ ] Git-Tag `v1.0.0` an den eingereichten Stand angleichen
+      (`a5a0e70`), Release-Artefakt und `SHA256SUMS.txt` neu hochladen.
 - [ ] `README.md`: Badge/Link zum Store ergänzen.
 - [ ] Erste Rückmeldungen aus den Stores in `SECURITY.md`/Issues kanalisieren.
 
