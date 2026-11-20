@@ -10,10 +10,9 @@ ist reproduzierbar: Build, Tests und Lint sind im CI grün.
   (Build mit `strict_min_version` 140.0, Android 142,
   `data_collection_permissions`), wartet auf die Prüfung durch Mozilla.
 - **Chrome Web Store:** noch nicht eingereicht – Einreichung steht aus.
-- **GitHub-Release `v1.0.0`:** existiert (Tag auf `510f15f`, Artefakt mit
-  Mindestversion 128.0). Das eingereichte AMO-Build ist damit **nicht**
-  byte-identisch; für die Store-Version zählt der eingereichte Stand
-  (`a5a0e70`).
+- **GitHub-Release `v1.0.0`:** Tag auf **`a5a0e70`** (AMO-Submission-Build)
+  ausgerichtet (20.11.2026, Force-Push). Das Release-Artefakt entspricht
+  nun exakt dem bei AMO eingereichten Build.
 
 ## Artefakt
 
