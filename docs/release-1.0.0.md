@@ -8,7 +8,9 @@ ist reproduzierbar: Build, Tests und Lint sind im CI grün.
 
 - **Firefox / AMO:** eingereicht am **19.11.2026** aus `a5a0e70`
   (Build mit `strict_min_version` 140.0, Android 142,
-  `data_collection_permissions`), wartet auf die Prüfung durch Mozilla.
+  `data_collection_permissions`); **von Mozilla freigegeben und
+  veröffentlicht am 24.11.2026** –
+  <https://addons.mozilla.org/en-US/firefox/addon/grunq-signer/>
 - **Chrome Web Store:** noch nicht eingereicht – Einreichung steht aus.
 - **GitHub-Release `v1.0.0`:** Tag auf **`a5a0e70`** (AMO-Submission-Build)
   ausgerichtet (20.11.2026, Force-Push). Das Release-Artefakt entspricht
@@ -96,8 +98,10 @@ Chrome zeigt max. 5 Bilder: 01–04 + 06 verwenden, Audit nur bei AMO.
     ```
 11. **Data collection:** "This add-on collects no data" (manifest declares
     `data_collection_permissions.required = ["none"]`).
-12. Nach Freigabe: Installations-Button-Link auf der Landing-Page
-    (`/grunq-signer/`) eintragen und `README`-Link ergänzen.
+12. ~~Nach Freigabe: Installations-Button-Link auf der Landing-Page
+    (`/grunq-signer/`) eintragen und `README`-Link ergänzen.~~ Erledigt
+    am 24.11.2026 (Freigabe durch Mozilla): Landing-Page und README
+    tragen den Store-Link.
 
 ## Chrome Web Store
 

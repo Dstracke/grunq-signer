@@ -74,13 +74,17 @@ Grunq node) against the signer core over a real relay — by default
 `RELAY_WS=wss://…`; the block is skipped when the relay is unreachable,
 `FORCE_E2E=1` turns failures into errors.
 
-Install from `dist/` until the store listings are live (see
-[`docs/store-listing.md`](docs/store-listing.md)):
+**Firefox/Zen:** reviewed and published on addons.mozilla.org —
+<https://addons.mozilla.org/en-US/firefox/addon/grunq-signer/>.
+Updates arrive through the browser.
 
-- **Firefox/Zen:** `about:debugging#/runtime/this-firefox` → *Load Temporary
-  Add-on…* → pick `dist/manifest.json`.
+The Chrome Web Store listing is still in preparation; until then load the
+build (see [`docs/store-listing.md`](docs/store-listing.md)):
+
 - **Chromium:** `chrome://extensions` → enable developer mode → *Load
   unpacked* → pick the `dist/` directory.
+- **Firefox with your own build:** `about:debugging#/runtime/this-firefox` →
+  *Load Temporary Add-on…* → pick `dist/manifest.json`.
 
 `npm run lint` checks the built extension with `web-ext`; CI
 (`.github/workflows/ci.yml`) runs build, tests and the lint step on every
