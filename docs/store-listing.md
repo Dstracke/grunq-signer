@@ -9,7 +9,7 @@ default/fallback, German bundled).
 | Field | Value |
 |---|---|
 | Name | Grunq Signer |
-| Version | 1.0.0 (`package.json` / `dist/manifest.json`) |
+| Version | 1.0.1 (`package.json` / `dist/manifest.json`) |
 | Summary (≤ 132 chars) | Nostr identity in your browser: NIP-07 provider and NIP-46 signer. Keys stay local, encrypted at rest, no account. |
 | Category | Firefox: **Privacy & Security** (German UI: *Datenschutz & Sicherheit*), exactly one; there is no "Other" in the current list · Chrome: *Productivity* → *Developer Tools* is wrong; use *Productivity* |
 | License | AGPL-3.0 |
@@ -91,7 +91,7 @@ viewport.
 
 The step-by-step submission (fields, reviewer notes, permission
 justifications, release notes) is in
-[`release-1.0.0.md`](release-1.0.0.md).
+[`release-1.0.1.md`](release-1.0.1.md).
 
 ## Before submitting – manual end-to-end check with the Grunq node
 
@@ -111,7 +111,7 @@ justifications, release notes) is in
 ## Submission notes
 
 - Build the artifact: `npm run build && npm run package` →
-  `web-ext-artifacts/grunq_signer-1.0.0.zip` (manifest at the zip root).
+  `web-ext-artifacts/grunq_signer-1.0.1.zip` (manifest at the zip root).
 - Firefox (AMO): `npm run lint` first, then upload that zip (or the same
   build as source for the reviewer). The add-on id is `signer@grunq.com`; the signing key of the
   AMO account must stay stable so the id keeps working for self-distribution.

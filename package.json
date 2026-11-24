@@ -1,6 +1,6 @@
 {
   "name": "grunq-signer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Grunq Signer - Nostr browser extension (NIP-07 provider, NIP-46 signer in M2)",
   "type": "module",

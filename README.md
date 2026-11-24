@@ -29,7 +29,7 @@ has an empty message or an undeclared `$PLACEHOLDER$`.
 
 ## Status
 
-**Version 1.0.0 – first public release.** A browser extension that is both a
+**Version 1.0.1** (first public release 1.0.0). A browser extension that is both a
 NIP-07 provider (`window.nostr`) and a NIP-46 remote signer (bunker).
 
 - **NIP-07**: approved sites get `window.nostr`; every signature is confirmed
@@ -49,7 +49,7 @@ NIP-07 provider (`window.nostr`) and a NIP-46 remote signer (bunker).
 - **Audit log**, options page, de/en UI following the browser language.
 
 `npm run package` produces the store artifact
-(`web-ext-artifacts/grunq_signer-1.0.0.zip`); listing copy, screenshots and
+(`web-ext-artifacts/grunq_signer-1.0.1.zip`); listing copy, screenshots and
 submission notes live in [`docs/store-listing.md`](docs/store-listing.md).
 Changes are listed in [`CHANGELOG.md`](CHANGELOG.md).
 
@@ -88,7 +88,7 @@ build (see [`docs/store-listing.md`](docs/store-listing.md)):
 
 `npm run lint` checks the built extension with `web-ext`; CI
 (`.github/workflows/ci.yml`) runs build, tests and the lint step on every
-push. A tag push (`v1.0.0`, …) additionally builds the store ZIP and attaches
+push. A tag push (`v1.0.1`, …) additionally builds the store ZIP and attaches
 it to the GitHub release (`.github/workflows/release.yml`).
 
 **Platforms:** Firefox and Chromium on the desktop (tested on Zen/Firefox);

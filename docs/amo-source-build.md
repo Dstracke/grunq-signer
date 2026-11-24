@@ -25,11 +25,11 @@ CSS preprocessor. `npx web-ext` is only used to lint/package, never to build.
 ## Reproduce
 
 ```bash
-unzip grunq_signer-1.0.0-source.zip -d grunq-signer
+unzip grunq_signer-1.0.1-source.zip -d grunq-signer
 cd grunq-signer
 npm ci            # installs esbuild + the three @noble packages from the lockfile
 npm run build     # = node build.mjs  → writes dist/
-npm test          # optional: 122 tests, no network needed (Relay-E2E is skipped)
+npm test          # optional: 126 tests, no network needed (Relay-E2E is skipped)
 npm run lint      # optional: web-ext lint (expects only BACKGROUND_SERVICE_WORKER_IGNORED)
 ```
 

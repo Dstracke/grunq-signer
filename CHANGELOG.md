@@ -6,6 +6,8 @@ semantic versioning.
 
 ## [Unreleased]
 
+## [1.0.1] – 2026-11-24
+
 ### Added
 
 - **Identitäten umbenennen:** Jede Zeile der Identitätsliste hat jetzt
