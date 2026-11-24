@@ -484,6 +484,12 @@
   "btnActivate": {
     "message": "Activate"
   },
+  "btnRenameIdentity": {
+    "message": "Rename"
+  },
+  "btnRenameSave": {
+    "message": "Save"
+  },
   "btnRemoveIdentity": {
     "message": "Remove"
   },

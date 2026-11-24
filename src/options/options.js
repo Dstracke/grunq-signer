@@ -90,6 +90,50 @@ async function refreshIdentities() {
   renderIdentities();
 }
 
+// Inline rename: the label is local metadata (it is never published), so this
+// needs no unlock - the background only rewrites the identity record.
+function startIdentityRename(li, item) {
+  li.textContent = '';
+  const row = document.createElement('span');
+  row.className = 'rename-row';
+  const input = document.createElement('input');
+  input.className = 'field';
+  input.type = 'text';
+  input.maxLength = 40;
+  input.value = item.label || '';
+  input.placeholder = t('identityLabel');
+  const save = document.createElement('button');
+  save.className = 'primary';
+  save.textContent = t('btnRenameSave');
+  const cancel = document.createElement('button');
+  cancel.textContent = t('btnCancel');
+  const commit = async () => {
+    if (save.disabled) return;
+    save.disabled = true;
+    try {
+      await send({ action: 'identity.rename', id: item.id, label: input.value });
+      await refresh();
+    } catch (e) {
+      save.disabled = false;
+      showError(el('global-error'), e);
+    }
+  };
+  save.addEventListener('click', commit);
+  cancel.addEventListener('click', () => refreshIdentities());
+  input.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter') {
+      ev.preventDefault();
+      commit();
+    } else if (ev.key === 'Escape') {
+      refreshIdentities();
+    }
+  });
+  row.append(input, save, cancel);
+  li.append(row);
+  input.focus();
+  input.select();
+}
+
 function renderIdentities() {
   const list = el('identities');
   list.textContent = '';
@@ -111,6 +155,11 @@ function renderIdentities() {
     if (item.encrypted) parts.push(item.unlocked ? t('secBadgeEncrypted') : t('secBadgeLocked'));
     sub.textContent = parts.join(' · ');
     li.append(who, sub);
+
+    const rename = document.createElement('button');
+    rename.textContent = t('btnRenameIdentity');
+    rename.addEventListener('click', () => startIdentityRename(li, item));
+    li.append(rename);
 
     if (!item.active) {
       const use = document.createElement('button');
@@ -257,13 +306,8 @@ el('backup-file').addEventListener('change', async () => {
 
 let profileData = { fields: {}, eventId: null, publishedAt: null };
 
-async function refreshProfile() {
-  try {
-    profileData = await send({ action: 'profile.get' });
-  } catch {
-    profileData = { fields: {}, eventId: null, publishedAt: null };
-  }
-  const fields = profileData.fields ?? {};
+/** Write profile fields into the editor (local draft or fetched relay copy). */
+function fillProfileForm(fields) {
   el('pf-name').value = fields.name ?? '';
   el('pf-display-name').value = fields.display_name ?? '';
   el('pf-about').value = fields.about ?? '';
@@ -275,6 +319,15 @@ async function refreshProfile() {
   el('pf-bot').checked = fields.bot === true;
   resetChecks();
   renderPreview();
+}
+
+async function refreshProfile() {
+  try {
+    profileData = await send({ action: 'profile.get' });
+  } catch {
+    profileData = { fields: {}, eventId: null, publishedAt: null };
+  }
+  fillProfileForm(profileData.fields ?? {});
   const chip = el('profile-state');
   const published = !!profileData.publishedAt;
   chip.textContent = published ? t('profilePublishedChip') : t('profileDraftChip');
@@ -541,8 +594,8 @@ el('btn-profile-fetch').addEventListener('click', async () => {
   show(el('profile-error'), false);
   show(el('profile-status'), false);
   try {
-    await send({ action: 'profile.fetch' });
-    await refreshProfile();
+    const res = await send({ action: 'profile.fetch' });
+    fillProfileForm(res?.fields ?? {});
     flash(el('profile-status'), t('profileFetched'));
   } catch (e) {
     showError(el('profile-error'), e);

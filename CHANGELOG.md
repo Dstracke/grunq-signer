@@ -6,6 +6,22 @@ semantic versioning.
 
 ## [Unreleased]
 
+### Added
+
+- **Identitäten umbenennen:** Jede Zeile der Identitätsliste hat jetzt
+  „Umbenennen“ (Inline-Feld, Enter speichert, Escape bricht ab). Die
+  Bezeichnung ist lokale Metadaten (`identity.rename`), wird nie
+  veröffentlicht und braucht keinen Unlock.
+
+### Fixed
+
+- **„Von Relays laden“ füllte das Formular nicht:** Der Abruf holte die
+  Felder, verwarf sie und lud anschließend den (leeren) lokalen Speicher neu
+  ins Formular – sichtbar war nur die Statuszeile. Jetzt landen die geladenen
+  Felder im Editor (und in der Vorschau), bis man sie mit „Profil
+  veröffentlichen“ übernimmt. Regressionstest:
+  `test/options.test.mjs` (Fake-DOM, prüft auch das Umbenennen).
+
 ### Changed
 
 - **Mindestversionen im Manifest:** Firefox Desktop 140 (statt 128), Firefox

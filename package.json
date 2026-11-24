@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
-    "test": "node --test test/crypto.test.mjs test/nip46.test.mjs test/relay-pool.test.mjs test/qr.test.mjs test/nip49.test.mjs test/bundle.test.mjs test/keystore.test.mjs test/profile.test.mjs test/profilechecks.test.mjs test/audit.test.mjs test/ratelimit.test.mjs test/background.test.mjs test/i18n.test.mjs",
+    "test": "node --test test/crypto.test.mjs test/nip46.test.mjs test/relay-pool.test.mjs test/qr.test.mjs test/nip49.test.mjs test/bundle.test.mjs test/keystore.test.mjs test/profile.test.mjs test/profilechecks.test.mjs test/audit.test.mjs test/ratelimit.test.mjs test/background.test.mjs test/options.test.mjs test/i18n.test.mjs",
     "i18n:check": "node --test test/i18n.test.mjs",
     "lint": "npx --yes web-ext lint --source-dir=dist",
     "package": "npx --yes web-ext build --source-dir=dist --artifacts-dir=web-ext-artifacts --overwrite-dest"
