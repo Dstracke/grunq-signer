@@ -76,10 +76,11 @@ Grunq node) against the signer core over a real relay — by default
 
 **Firefox/Zen:** reviewed and published on addons.mozilla.org —
 <https://addons.mozilla.org/en-US/firefox/addon/grunq-signer/>.
-Updates arrive through the browser.
+**Chrome/Chromium/Edge:** reviewed and published in the Chrome Web Store —
+<https://chromewebstore.google.com/detail/grunq-signer/klnkcpfcekofmobgekgdcojdapnkcjdk>
+(Edge installs from there too). Updates arrive through the browser.
 
-The Chrome Web Store listing is still in preparation; until then load the
-build (see [`docs/store-listing.md`](docs/store-listing.md)):
+Loading your own build (see [`docs/store-listing.md`](docs/store-listing.md)):
 
 - **Chromium:** `chrome://extensions` → enable developer mode → *Load
   unpacked* → pick the `dist/` directory.
